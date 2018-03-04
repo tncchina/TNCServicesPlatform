@@ -1,0 +1,77 @@
+_ReSharper*
+[Bb]in
+obj
+objd
+.vs
+/out/
+/target/
+/tmp/
+*.nupkg
+*.user
+*.sln.cache
+*.suo
+*.userosscache
+*.projhash
+*.projhash.userData
+*.projhash.userData.assemblies
+*.slnhash
+*.slnhash.userData
+*.slnhash.userData.assemblies
+TestResults
+[Tt]humbs.db
+buildd.*
+build.*
+buildout.*
+*.log
+*.bak
+OACRTemp/
+build_logs/
+__tracer/
+lock
+/public/inc/bldver.cpp
+/public/inc/bldver.cs
+/public/inc/bldver.h
+/public/inc/bldver.vb
+/public/inc/sources.ver
+/data
+/Symbols
+/drop
+/.corext/.pkg/
+/.corext/gen/
+
+*.dll
+*.pdb
+UpgradeLog.htm
+
+#pacman
+packages
+
+# quickbuild.exe
+/version/
+/VersionGeneratingLogs/
+QLogs
+QLocal
+QTestLogs
+
+# bad tlb/chm generators in nmake tree
+*.tlb
+*.chm
+
+# dumb silverlight
+ClientBin/
+
+# dumb azure
+*.build.csdef
+csx/
+
+# Java
+*.jar
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Maven
+log/
+target/
