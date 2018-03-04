@@ -9,4 +9,4 @@ Cloud Services Platform for TNC AI Project
 # Adding New Service
 1. Add new C# library project 
 2. Add project reference to the new C# library project rom #1 in TNCServicesPlatform.APIHost project
-3. Register API Library Assembly in Startup.cs in TNCServicesPlatform.APIHost project
+3. Register API Library Assembly in appsettings.json in TNCServicesPlatform.APIHost project
