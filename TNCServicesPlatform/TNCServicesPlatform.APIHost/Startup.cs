@@ -4,11 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using System.Reflection;
+using System.Linq;
 
 namespace TNCServicesPlatform.APIHost
 {
     public class Startup
     {
+        
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -23,7 +25,12 @@ namespace TNCServicesPlatform.APIHost
             var builder = services.AddMvc();
 
             // Register API Library Assembly
-            builder.AddApplicationPart(Assembly.Load(new AssemblyName("TNCServicesPlatform.StorageAPI")));
+            Configuration.GetSection("ApplicationParts:AssemblyNames")
+                .AsEnumerable()
+                .Select(t => t.Value)
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .ToList()
+                .ForEach(t => builder.AddApplicationPart(Assembly.Load(new AssemblyName(t))));
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
