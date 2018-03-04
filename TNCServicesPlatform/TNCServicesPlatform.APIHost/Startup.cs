@@ -22,7 +22,7 @@ namespace TNCServicesPlatform.APIHost
 
             var builder = services.AddMvc();
 
-            // Adding API Projects
+            // Register API Library Assembly
             builder.AddApplicationPart(Assembly.Load(new AssemblyName("TNCServicesPlatform.StorageAPI")));
 
             // Register the Swagger generator, defining one or more Swagger documents
