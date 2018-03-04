@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 namespace TNCServicesPlatform.StorageAPI.Controllers
 {
     [Route("api/storage/")]
-    public partial class StorageController : Controller
+    public class StorageController : Controller
     {
         [HttpPost]
         [Route("_echo")]

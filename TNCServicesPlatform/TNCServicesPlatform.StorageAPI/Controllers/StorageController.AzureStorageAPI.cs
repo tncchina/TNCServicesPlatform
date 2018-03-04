@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace TNCServicesPlatform.StorageAPI.Controllers
 {
     [Route("api/storage/")]
-    public partial class StorageController_AzureStorageAPIController : Controller
+    public class StorageController_AzureStorageAPIController : Controller
     {
         [HttpPost]
         [Route("{type}/_upload")]
