@@ -5,12 +5,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using System.Reflection;
 using System.Linq;
+using Microsoft.Azure.KeyVault;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Threading.Tasks;
+using System;
+using static Microsoft.Azure.KeyVault.KeyVaultClient;
+using System.IO;
 
 namespace TNCServicesPlatform.APIHost
 {
     public class Startup
     {
-        
+        public static KeyVaultClient kv = new KeyVaultClient((new AuthenticationCallback(GetToken)));
+        private static string kvName;
+        private static string kvClientId;
+        private static string kvClientSecret;
+
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -31,6 +42,11 @@ namespace TNCServicesPlatform.APIHost
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList()
                 .ForEach(t => builder.AddApplicationPart(Assembly.Load(new AssemblyName(t))));
+            kvName = Configuration.GetSection("KeyVaultAuth:Vault").Value;
+            kvClientId = Configuration.GetSection("KeyVaultAuth:ClientId").Value;
+            kvClientSecret = Configuration.GetSection("KeyVaultAuth:ClientSecret").Value;
+
+            var key = GetKeyByName(@"WebSiteKey");
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
@@ -56,6 +72,33 @@ namespace TNCServicesPlatform.APIHost
             });
 
             app.UseMvc();
+        }
+
+        //the method that will be provided to the KeyVaultClient
+        private static async Task<string> GetToken(string authority, string resource, string scope)
+        {
+            var authContext = new AuthenticationContext(authority);
+            ClientCredential clientCred = new ClientCredential(kvClientId, kvClientSecret);
+            AuthenticationResult result = await authContext.AcquireTokenAsync(resource, clientCred);
+
+            if (result == null)
+                throw new InvalidOperationException("Failed to obtain the JWT token");
+
+            return result.AccessToken;
+        }
+
+        public static string GetKeyByName(string name)
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
+            var Configuration = builder.Build();
+
+            // I put my GetToken method in a Utils class. Change for wherever you placed your method.
+            var kv = new KeyVaultClient(GetToken);
+            var secT = kv.GetSecretAsync(Configuration.GetSection("KeyVaultAuth:KeyNameUrlMap:"+name).Value);
+            Task.WaitAll(secT);
+            return secT.Result.Value;
         }
     }
 }
