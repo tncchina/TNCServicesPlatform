@@ -16,11 +16,9 @@ namespace TNCServicesPlatform.APIHost
 {
     public class Startup
     {
-        public static KeyVaultClient kv = new KeyVaultClient((new AuthenticationCallback(GetToken)));
-        private static string kvName;
-        private static string kvClientId;
-        private static string kvClientSecret;
-
+        public static KeyVaultClient kv = new KeyVaultClient(KeyVaultAuthenticationCallback.Value);
+        private static Lazy<AuthenticationCallback>  KeyVaultAuthenticationCallback => new Lazy<AuthenticationCallback>(() => new AuthenticationCallback(GetToken));
+        private static Lazy<IConfiguration> _secreteConfiguration = new Lazy<IConfiguration>(() => new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("secrete.json").Build());
 
         public Startup(IConfiguration configuration)
         {
@@ -32,9 +30,7 @@ namespace TNCServicesPlatform.APIHost
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
             var builder = services.AddMvc();
-
             // Register API Library Assembly
             Configuration.GetSection("ApplicationParts:AssemblyNames")
                 .AsEnumerable()
@@ -42,10 +38,7 @@ namespace TNCServicesPlatform.APIHost
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList()
                 .ForEach(t => builder.AddApplicationPart(Assembly.Load(new AssemblyName(t))));
-            kvName = Configuration.GetSection("KeyVaultAuth:Vault").Value;
-            kvClientId = Configuration.GetSection("KeyVaultAuth:ClientId").Value;
-            kvClientSecret = Configuration.GetSection("KeyVaultAuth:ClientSecret").Value;
-
+            
             var key = GetKeyByName(@"WebSiteKey");
 
             // Register the Swagger generator, defining one or more Swagger documents
@@ -77,6 +70,8 @@ namespace TNCServicesPlatform.APIHost
         //the method that will be provided to the KeyVaultClient
         private static async Task<string> GetToken(string authority, string resource, string scope)
         {
+            var kvClientId = _secreteConfiguration.Value.GetSection("KeyVaultAuth:ClientId").Value;
+            var kvClientSecret = _secreteConfiguration.Value.GetSection("KeyVaultAuth:ClientSecret").Value;
             var authContext = new AuthenticationContext(authority);
             ClientCredential clientCred = new ClientCredential(kvClientId, kvClientSecret);
             AuthenticationResult result = await authContext.AcquireTokenAsync(resource, clientCred);
@@ -89,14 +84,8 @@ namespace TNCServicesPlatform.APIHost
 
         public static string GetKeyByName(string name)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json");
-            var Configuration = builder.Build();
-
-            // I put my GetToken method in a Utils class. Change for wherever you placed your method.
             var kv = new KeyVaultClient(GetToken);
-            var secT = kv.GetSecretAsync(Configuration.GetSection("KeyVaultAuth:KeyNameUrlMap:"+name).Value);
+            var secT = kv.GetSecretAsync(_secreteConfiguration.Value.GetSection("KeyVaultAuth:KeyNameUrlMap:"+name).Value);
             Task.WaitAll(secT);
             return secT.Result.Value;
         }
