@@ -15,7 +15,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         [Route("_echo")]
         public async Task<IActionResult> Echo([FromBody] JObject item)
         {
-            return this.Ok(new string[] { "Hello", "World", item.ToString() }); ;
+            return this.Ok(new string[] { "Hello", "World", item.ToString() });
         }
     }
 }
