@@ -43,6 +43,9 @@ lock
 *.pdb
 UpgradeLog.htm
 
+#secret
+secret.json
+
 #pacman
 packages
 
