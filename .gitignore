@@ -36,15 +36,13 @@ lock
 /data
 /Symbols
 /drop
-/.corext/.pkg/
-/.corext/gen/
 
 *.dll
 *.pdb
 UpgradeLog.htm
 
 #secret
-secret.json
+TNCServicesPlatform/TNCServicesPlatform.APIHost/secret.json
 
 #pacman
 packages
