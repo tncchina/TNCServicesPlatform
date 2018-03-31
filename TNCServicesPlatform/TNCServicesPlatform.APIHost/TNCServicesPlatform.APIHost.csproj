@@ -32,7 +32,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="secrete.json">
+    <Content Update="secretmap.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="secret.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
