@@ -25,6 +25,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Properties\PublishProfiles\TNCServicesPlatform - Web Deploy.pubxml" />
+    <None Remove="Properties\PublishProfiles\TNCServicesPlatformAPIHost - Web Deploy.pubxml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\PublishProfiles\" />
     <Folder Include="Utilities\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>

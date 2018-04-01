@@ -40,9 +40,6 @@ namespace TNCServicesPlatform.APIHost
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToList()
                 .ForEach(t => builder.AddApplicationPart(Assembly.Load(new AssemblyName(t))));
-            
-            var key = GetKeyByName(@"WebSiteKey").Result.Value;
-
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {

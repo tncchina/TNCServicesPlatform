@@ -42,7 +42,7 @@ lock
 UpgradeLog.htm
 
 #secret
-TNCServicesPlatform/TNCServicesPlatform.APIHost/secret.json
+secret.json
 
 #pacman
 packages
