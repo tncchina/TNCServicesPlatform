@@ -5,23 +5,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using System.Reflection;
 using System.Linq;
-using Microsoft.Azure.KeyVault;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using System.Threading.Tasks;
-using System;
-using static Microsoft.Azure.KeyVault.KeyVaultClient;
-using System.IO;
-using Microsoft.Azure.KeyVault.Models;
+using TNCServicesPlatform.APIHost.DataModels;
 
 namespace TNCServicesPlatform.APIHost
 {
     public class Startup
     {
-        public static KeyVaultClient kv = new KeyVaultClient(KeyVaultAuthenticationCallback.Value);
-        private static Lazy<AuthenticationCallback>  KeyVaultAuthenticationCallback => new Lazy<AuthenticationCallback>(() => new AuthenticationCallback(GetToken));
-        private static Lazy<IConfiguration> _secretConfiguration = new Lazy<IConfiguration>(() => new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("secret.json").Build());
-        private static Lazy<IConfiguration> _secretMapConfiguration = new Lazy<IConfiguration>(() => new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("secretmap.json").Build());
-
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -45,6 +34,21 @@ namespace TNCServicesPlatform.APIHost
             {
                 c.SwaggerDoc("v1", new Info { Title = "TNC Services API Platform", Version = "v1" });
             });
+            services.AddMvc();
+
+            // Dependency Injection
+            services.AddSingleton<KeyVaultAccessModel, KeyVaultAccessModel>();
+
+
+            //services.AddAuthentication(sharedOptions =>
+            //{
+            //    sharedOptions.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            //    sharedOptions.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            //    sharedOptions.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            //})
+            //.AddAzureAd(options => Configuration.Bind("AzureAd", options))
+            //.AddCookie();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -56,38 +60,14 @@ namespace TNCServicesPlatform.APIHost
             }
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
-
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "TNC Services API Platform");
             });
-
+            app.UseAuthentication();
             app.UseMvc();
         }
 
-        //the method that will be provided to the KeyVaultClient
-        private static async Task<string> GetToken(string authority, string resource, string scope)
-        {
-            var kvClientId = _secretConfiguration.Value.GetSection("KeyVaultAuth:ClientId").Value;
-            var kvClientSecret = _secretConfiguration.Value.GetSection("KeyVaultAuth:ClientSecret").Value;
-            var authContext = new AuthenticationContext(authority);
-            ClientCredential clientCred = new ClientCredential(kvClientId, kvClientSecret);
-            AuthenticationResult result = await authContext.AcquireTokenAsync(resource, clientCred);
-
-            if (result == null)
-                throw new InvalidOperationException("Failed to obtain the JWT token");
-
-            return result.AccessToken;
-        }
-
-        public static async Task<SecretBundle> GetKeyByName(string name)
-        {
-            var testx = _secretMapConfiguration.Value;
-
-            var kv = new KeyVaultClient(GetToken);
-            var secT = await kv.GetSecretAsync(_secretMapConfiguration.Value.GetSection("KeyVaultAuth:KeyNameUrlMap:"+name).Value);
-            return secT;
-        }
     }
 }
