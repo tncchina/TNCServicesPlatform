@@ -17,19 +17,13 @@ namespace TNCServicesPlatform.StorageAPI.Models
 
         public string ImageName { get; set; }
 
+        public string FileFormat { get; set; }
+
         public string ImageBlob { get; set; }
 
         public string UploadBlobSASUrl { get; set; }
 
         public string DownloadBlobSASUrl { get; set; }
-
-        public string FileFormat { get; set; }
-
-        public string CameraId { get; set; }
-
-        public string LocationId { get; set; }
-
-        public string ShootingTime { get; set; }
 
         public string Notes { get; set; }
     }
