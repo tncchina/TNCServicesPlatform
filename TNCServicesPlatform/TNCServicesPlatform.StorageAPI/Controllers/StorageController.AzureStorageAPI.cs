@@ -46,7 +46,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
                 animalImage.Id = Guid.NewGuid().ToString().ToLowerInvariant();
                 animalImage.ImageName = animalImage.ImageName.ToLowerInvariant();
                 animalImage.FileFormat = animalImage.FileFormat.ToLowerInvariant();
-                animalImage.ImageBlob = $"{animalImage.Id}/{animalImage.ImageName}.{animalImage.FileFormat}";
+                animalImage.ImageBlob = $"{animalImage.Id}/{animalImage.ImageName}{animalImage.FileFormat}";
 
                 // This call creates a local CloudBlobContainer object, but does not make a network call
                 // to the Azure Storage Service. The container on the service that this object represents may
