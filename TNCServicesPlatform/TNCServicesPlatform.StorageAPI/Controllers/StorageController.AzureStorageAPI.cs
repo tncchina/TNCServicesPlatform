@@ -6,6 +6,7 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -36,38 +37,37 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         [Route("Upload")]
         public async Task<AnimalImage> UploadImage([FromBody]AnimalImage animalImage)
         {
-            CloudBlobClient blobClient = BlobStorageAccount.CreateCloudBlobClient();
-            CloudBlobContainer container = blobClient.GetContainerReference(BlobStorageContainerName);
-            await container.CreateIfNotExistsAsync();
-
-            animalImage.Id = Guid.NewGuid().ToString().ToLowerInvariant();
-            animalImage.ImageName = animalImage.ImageName.ToLowerInvariant();
-            animalImage.FileFormat = animalImage.FileFormat.ToLowerInvariant();
-            animalImage.ImageBlob = $"{animalImage.Id}/{animalImage.ImageName}.{animalImage.FileFormat}";
-
-            // This call creates a local CloudBlobContainer object, but does not make a network call
-            // to the Azure Storage Service. The container on the service that this object represents may
-            // or may not exist at this point. If it does exist, the properties will not yet have been
-            // popluated on this object.
-            CloudBlockBlob blockblob = container.GetBlockBlobReference(animalImage.ImageBlob);
-            animalImage.UploadBlobSASUrl = Utils.GenerateWriteSasUrl(blockblob);
-
-            // upload data to Cosmos DB
-            await CosmosDBClient.UpsertDocumentAsync(CosmosDBCollectionUri, animalImage);
-
-            /* debugging only
-            string blobContent = "Simulating uploading a faked image";
-            CloudBlockBlob blob = new CloudBlockBlob(new Uri(animalImage.UploadBlobSASUrl));
-            MemoryStream msWrite = new MemoryStream(Encoding.UTF8.GetBytes(blobContent));
-            msWrite.Position = 0;
-            using (msWrite)
+            try
             {
-                await blob.UploadFromStreamAsync(msWrite);
-            }       
-             */
+                CloudBlobClient blobClient = BlobStorageAccount.CreateCloudBlobClient();
+                CloudBlobContainer container = blobClient.GetContainerReference(BlobStorageContainerName);
+                await container.CreateIfNotExistsAsync();
 
-            //return blob url for uploading image
-            return animalImage;
+                animalImage.Id = Guid.NewGuid().ToString().ToLowerInvariant();
+                animalImage.ImageName = animalImage.ImageName.ToLowerInvariant();
+                animalImage.FileFormat = animalImage.FileFormat.ToLowerInvariant();
+                animalImage.ImageBlob = $"{animalImage.Id}/{animalImage.ImageName}.{animalImage.FileFormat}";
+
+                // This call creates a local CloudBlobContainer object, but does not make a network call
+                // to the Azure Storage Service. The container on the service that this object represents may
+                // or may not exist at this point. If it does exist, the properties will not yet have been
+                // popluated on this object.
+                CloudBlockBlob blockblob = container.GetBlockBlobReference(animalImage.ImageBlob);
+                animalImage.UploadBlobSASUrl = Utils.GenerateWriteSasUrl(blockblob);
+
+                // upload data to Cosmos DB
+                await CosmosDBClient.UpsertDocumentAsync(CosmosDBCollectionUri, animalImage);
+
+                //return blob url for uploading image
+                return animalImage;
+
+            }
+            catch (Exception ex)
+            {
+                // TODO: need better exception handling
+                Trace.TraceError(ex.ToString());
+                return null;
+            }
         }
 
         [HttpGet]
