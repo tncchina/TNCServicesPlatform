@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2002
+VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TNCServicesPlatform.APIHost", "TNCServicesPlatform.APIHost\TNCServicesPlatform.APIHost.csproj", "{A2BABDEA-F81D-4A1E-99C6-FAC04F8BBA42}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TNCServicesPlatform.StorageAPI", "TNCServicesPlatform.StorageAPI\TNCServicesPlatform.StorageAPI.csproj", "{2C609856-5812-489F-A5C2-64726C3D1AE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCImagePredictionConsole", "TNCImagePredictionConsole\TNCImagePredictionConsole.csproj", "{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TNCServicePlatformAccessDemo", "TNCServicePlatformAccessDemo\TNCServicePlatformAccessDemo.csproj", "{265B9FC7-14D0-41EE-A2C2-9AFB97C393DA}"
 EndProject
@@ -51,6 +53,14 @@ Global
 		{157A3394-AF6E-43C5-AC56-D170F439F236}.Release|Any CPU.Build.0 = Release|Any CPU
 		{157A3394-AF6E-43C5-AC56-D170F439F236}.Release|x64.ActiveCfg = Release|Any CPU
 		{157A3394-AF6E-43C5-AC56-D170F439F236}.Release|x64.Build.0 = Release|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Debug|x64.Build.0 = Debug|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Release|x64.ActiveCfg = Release|Any CPU
+		{47188BBC-5DA0-4855-86DE-AE4E446D2F1B}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
