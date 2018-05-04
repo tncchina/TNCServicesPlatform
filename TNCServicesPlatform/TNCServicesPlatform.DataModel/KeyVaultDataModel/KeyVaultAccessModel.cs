@@ -5,10 +5,11 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using TNCServicesPlatform.DataModel.Interfaces;
 
-namespace TNCServicesPlatform.APIHost.DataModels
+namespace TNCServicesPlatform.DataModel
 {
-    public class KeyVaultAccessModel
+    public class KeyVaultAccessModel : IKeyVaultAccessModel
     {
         private string _kvAuthenticationFilePath;
         private string _kvKeyMappingFilePath;
