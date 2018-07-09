@@ -21,9 +21,11 @@ namespace TNCImagePredictionConsole
                 Console.WriteLine(@"Example: TNCImagePredictionConsole.exe E:\Monkey.jpg");
             }
 
+            // 1. upload image
             string imagePath = args[0];
             AnimalImage image = UploadImage(imagePath).Result;
 
+            // 2. image classification
             string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
             MakePredictionRequest(imageUrl);
 
@@ -55,7 +57,7 @@ namespace TNCImagePredictionConsole
                 Console.WriteLine(responseStr);
                 AnimalImage imageResponse = JsonConvert.DeserializeObject<AnimalImage>(responseStr);
 
-                // uppload image self to blob storage
+                // 2. uppload image self to blob storage
                 byte[] blobContent = File.ReadAllBytes(imagePath);
                 CloudBlockBlob blob = new CloudBlockBlob(new Uri(imageResponse.UploadBlobSASUrl));
                 MemoryStream msWrite = new MemoryStream(blobContent);
@@ -76,20 +78,27 @@ namespace TNCImagePredictionConsole
 
         static async void MakePredictionRequest(string imageUrl)
         {
-            var client = new HttpClient();
-
-            var uri = "http://tncservices.azurewebsites.net/api/prediction/url";
-            
-            byte[] byteData = Encoding.UTF8.GetBytes("{\"url\":\"" + imageUrl + "\"}");
-            HttpResponseMessage response;
-
-            using (var content = new ByteArrayContent(byteData))
+            try
             {
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                response = await client.PostAsync(uri, content);
-            }
+                var client = new HttpClient();
+                var uri = "http://tncservices.azurewebsites.net/api/prediction/url";
 
-            Console.WriteLine(await response.Content.ReadAsStringAsync());
+                byte[] byteData = Encoding.UTF8.GetBytes("{\"url\":\"" + imageUrl + "\"}");
+                HttpResponseMessage response;
+
+                using (var content = new ByteArrayContent(byteData))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    response = await client.PostAsync(uri, content);
+                }
+
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                throw ex;
+            }
         }
     }
 }

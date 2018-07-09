@@ -11,6 +11,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using TNCServicesPlatform.DataModel.Interfaces;
 using TNCServicesPlatform.StorageAPI.Common;
 using TNCServicesPlatform.StorageAPI.Models;
 
@@ -24,13 +25,28 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         private const string BlobStorageContainerName = "animalimages";
 
         // TODO: use KeyVault
-        private const string BlobStorageCS = "";
-        private const string CosmosDBUrl = "";
-        private const string CosmosDBKey = "";
+        private string BlobStorageCS;
+        private string CosmosDBKey;
+        private string CosmosDBUrl = "https://tncdb4test.documents.azure.com:443";
 
-        private static readonly CloudStorageAccount BlobStorageAccount = CloudStorageAccount.Parse(BlobStorageCS);
-        private static readonly DocumentClient CosmosDBClient = new DocumentClient(new Uri(CosmosDBUrl), CosmosDBKey);
-        private static readonly Uri CosmosDBCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName);
+        private readonly CloudStorageAccount BlobStorageAccount;
+        private readonly DocumentClient CosmosDBClient;
+        private readonly Uri CosmosDBCollectionUri;
+
+        private readonly IKeyVaultAccessModel _kv;
+
+        // Initialize controller with depenedncy injection -  kvInstance singleton
+        public StorageController_AzureStorageAPIController(IKeyVaultAccessModel kvInstance)
+        {
+            _kv = kvInstance;
+
+            BlobStorageCS = _kv.GetKeyByName("BlobStorageCS").Result.Value;
+            CosmosDBKey = _kv.GetKeyByName("CosmosDBKey").Result.Value;
+
+            BlobStorageAccount = CloudStorageAccount.Parse(BlobStorageCS);
+            CosmosDBClient = new DocumentClient(new Uri(CosmosDBUrl), CosmosDBKey);
+            CosmosDBCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName);
+        }
 
         // POST api/values
         [HttpPost]
@@ -38,7 +54,8 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         public async Task<AnimalImage> UploadImage([FromBody]AnimalImage animalImage)
         {
             try
-            {
+            {   
+                var key = await _kv.GetKeyByName("WebSiteKey");
                 CloudBlobClient blobClient = BlobStorageAccount.CreateCloudBlobClient();
                 CloudBlobContainer container = blobClient.GetContainerReference(BlobStorageContainerName);
                 await container.CreateIfNotExistsAsync();
@@ -66,7 +83,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             {
                 // TODO: need better exception handling
                 Trace.TraceError(ex.ToString());
-                return null;
+                throw;
             }
         }
 

@@ -34,6 +34,7 @@
     <Folder Include="Properties\PublishProfiles\" />
     <Folder Include="Utilities\" />
     <Folder Include="wwwroot\" />
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,4 +61,7 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Controllers\ValuesController.cs" />
+  </ItemGroup>
 </Project>
