@@ -12,7 +12,7 @@ using TNCServicesPlatform.StorageAPI.Models;
 namespace TNCImagePredictionConsole
 {
     class Program
-    {
+    {       
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -42,7 +42,7 @@ namespace TNCImagePredictionConsole
                 image.FileFormat = Path.GetExtension(imagePath);
 
                 // 1. Upload meta data to Cosmos DB
-                string uploadUrl = "http://tncservices.azurewebsites.net/api/storage/Upload";
+                string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload";
                 string imageJson = JsonConvert.SerializeObject(image);
                 byte[] byteData = Encoding.UTF8.GetBytes(imageJson);
                 HttpResponseMessage response;
@@ -81,7 +81,7 @@ namespace TNCImagePredictionConsole
             try
             {
                 var client = new HttpClient();
-                var uri = "http://tncservices.azurewebsites.net/api/prediction/url";
+                var uri = "http://tncapi.azurewebsites.net/api/prediction/url";
 
                 byte[] byteData = Encoding.UTF8.GetBytes("{\"url\":\"" + imageUrl + "\"}");
                 HttpResponseMessage response;
