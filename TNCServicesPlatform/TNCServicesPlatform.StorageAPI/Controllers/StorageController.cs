@@ -13,6 +13,7 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using TNCServicesPlatform.StorageAPI.Common;
 using System.Diagnostics;
 using Microsoft.Azure.Documents;
+using Newtonsoft.Json;
 
 namespace TNCServicesPlatform.StorageAPI.Controllers
 {
@@ -49,8 +50,8 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
 
         // POST api/values
         [HttpPost]
-        [Route("Upload")]
-        public async Task<AnimalImage> UploadImage([FromBody]AnimalImage animalImage)
+        [Route("Upload2")]
+        public async Task<AnimalImage> UploadImage2([FromBody]AnimalImage animalImage)
         {
             try
             {
@@ -76,6 +77,46 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
 
                 //return blob url for uploading image
                 return animalImage;
+
+            }
+            catch (Exception ex)
+            {
+                // TODO: need better exception handling
+                Trace.TraceError(ex.ToString());
+                throw;
+            }
+        }
+
+        // POST api/values
+        [HttpPost]
+        [Route("Upload")]
+        public async Task<string> UploadImage([FromBody]string animalImageName)
+        {
+            try
+            {
+                var animalImage = new AnimalImage();
+
+                var key = await _kv.GetKeyByName("WebSiteKey");
+                CloudBlobClient blobClient = BlobStorageAccount.CreateCloudBlobClient();
+                CloudBlobContainer container = blobClient.GetContainerReference(BlobStorageContainerName);
+                await container.CreateIfNotExistsAsync();
+
+                animalImage.Id = Guid.NewGuid().ToString().ToLowerInvariant();
+                animalImage.ImageName = animalImageName.ToLowerInvariant();
+                animalImage.ImageBlob = $"{animalImage.Id}/{animalImage.ImageName}";
+
+                // This call creates a local CloudBlobContainer object, but does not make a network call
+                // to the Azure Storage Service. The container on the service that this object represents may
+                // or may not exist at this point. If it does exist, the properties will not yet have been
+                // popluated on this object.
+                CloudBlockBlob blockblob = container.GetBlockBlobReference(animalImage.ImageBlob);
+                animalImage.UploadBlobSASUrl = Utils.GenerateWriteSasUrl(blockblob);
+
+                // upload data to Cosmos DB
+                await CosmosDBClient.UpsertDocumentAsync(CosmosDBCollectionUri, animalImage);
+
+                //return blob url for uploading image
+                return animalImage.UploadBlobSASUrl;
 
             }
             catch (Exception ex)

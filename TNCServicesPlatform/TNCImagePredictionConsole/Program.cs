@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Microsoft.Cognitive.CustomVision.Training.Models;
+using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -27,7 +28,7 @@ namespace TNCImagePredictionConsole
 
             // 2. image classification
             string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
-            MakePredictionRequest(imageUrl);
+            MakePredictionRequestCNTK(imageUrl);
 
             Console.ReadLine();
         }
@@ -42,7 +43,7 @@ namespace TNCImagePredictionConsole
                 image.FileFormat = Path.GetExtension(imagePath);
 
                 // 1. Upload meta data to Cosmos DB
-                string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload";
+                string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload2";
                 string imageJson = JsonConvert.SerializeObject(image);
                 byte[] byteData = Encoding.UTF8.GetBytes(imageJson);
                 HttpResponseMessage response;
@@ -92,7 +93,38 @@ namespace TNCImagePredictionConsole
                     response = await client.PostAsync(uri, content);
                 }
 
-                Console.WriteLine(await response.Content.ReadAsStringAsync());
+                string res = await response.Content.ReadAsStringAsync();
+                var resObj = JsonConvert.DeserializeObject<ImagePredictionResult>(res);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+
+        static async void MakePredictionRequestCNTK(string imageUrl)
+        {
+            try
+            {
+                var client = new HttpClient();
+                var uri = "http://tncapi.azurewebsites.net/api/prediction/cntk";
+
+                byte[] byteData = Encoding.UTF8.GetBytes("\"" + imageUrl + "\"");
+                HttpResponseMessage response;
+
+                using (var content = new ByteArrayContent(byteData))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    response = await client.PostAsync(uri, content);
+                }
+
+                string res = await response.Content.ReadAsStringAsync();
+                var resObj = JsonConvert.DeserializeObject<ImagePredictionResult>(res);
+                foreach(var pre in resObj.Predictions)
+                {
+                    Console.WriteLine(pre.Tag + ": " + pre.Probability);
+                }
             }
             catch (Exception ex)
             {

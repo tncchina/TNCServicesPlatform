@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TNCServicesPlatform.StorageAPI\TNCServicesPlatform.StorageAPI.csproj" />
+    <ProjectReference Include="..\TNCServicesPlatform.DataModel\TNCServicesPlatform.DataModel.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,6 +21,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         private const string iterationId = "7fe03d9f-6852-47b3-9f06-f7592f13de53";
         private const string application = "TNC";
         private string baseUrl = $"https://southcentralus.api.cognitive.microsoft.com/customvision/v1.1/Prediction/{projectId}/url?";
+        private string cntkUrl = "http://tncanimallabelwebapi.azurewebsites.net/api/Prediction";
 
         private readonly IKeyVaultAccessModel _kv;
         private string predictionKey;
@@ -56,6 +57,40 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
 
                 HttpResponseMessage response;
                 byte[] byteData = Encoding.UTF8.GetBytes("{\"url\":\"" + imageUrl["url"] + "\"}");
+
+                using (var content = new ByteArrayContent(byteData))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    response = await client.PostAsync(uri, content);
+                }
+
+                return (await response.Content.ReadAsStringAsync());
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+                throw;
+            }
+        }
+
+        [HttpPost]
+        [Route("cntk")]
+        public async Task<string> CNTK([FromBody] string imageUrl)
+        {
+            try
+            {
+                var client = new HttpClient();
+                // client.DefaultRequestHeaders.Add("Prediction-key", predictionKey);
+
+                // Request parameters
+                var queryString = HttpUtility.ParseQueryString(string.Empty);
+                queryString["iterationId"] = iterationId;
+                queryString["application"] = application;
+                //var uri = cntkUrl + queryString;
+                var uri = cntkUrl;
+
+                HttpResponseMessage response;
+                byte[] byteData = Encoding.UTF8.GetBytes("\"" + imageUrl + "\"");
 
                 using (var content = new ByteArrayContent(byteData))
                 {

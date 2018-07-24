@@ -75,6 +75,17 @@ namespace TNCServicesPlatform.APIHost
 
             // Dependency Injection
             services.AddSingleton<IKeyVaultAccessModel>(sp => new KeyVaultAccessModel(Path.Combine(assemblyFolderPath, "secret.json"), Path.Combine(assemblyFolderPath, "secretmap.json")));
+
+            services.AddCors(options =>
+            {// BEGIN02
+                options.AddPolicy("AllowAllOrigins",
+                    builder1 =>
+                    {
+                        builder1.AllowAnyOrigin();
+                    });
+            });
+
+            services.AddMvc(o => o.InputFormatters.Insert(0, new RawRequestBodyFormatter()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
