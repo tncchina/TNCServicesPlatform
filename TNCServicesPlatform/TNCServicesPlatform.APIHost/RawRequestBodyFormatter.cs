@@ -37,12 +37,13 @@ public class RawRequestBodyFormatter : InputFormatter
 
         var contentType = context.HttpContext.Request.ContentType;
 
-
+            return true;
+            /*
             if (string.IsNullOrEmpty(contentType) || contentType == "text/plain;charset=UTF-8" || contentType == "text/plain" ||
             contentType == "application/octet-stream")
             return true;
 
-        return false;
+        return false;*/
     }
 
     /// <summary>
@@ -83,6 +84,12 @@ public class RawRequestBodyFormatter : InputFormatter
                 return await InputFormatterResult.SuccessAsync(content);
             }
         }
+
+            using (var reader = new StreamReader(request.Body))
+            {
+                var content = await reader.ReadToEndAsync();
+                return await InputFormatterResult.SuccessAsync(content);
+            }
 
         return await InputFormatterResult.FailureAsync();
     }

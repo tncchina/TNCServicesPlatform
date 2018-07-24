@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Newtonsoft.Json.Linq;
-using TNCServicesPlatform.StorageAPI.Models;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.Azure.Documents.Client;
-using TNCServicesPlatform.DataModel.Interfaces;
-using Microsoft.WindowsAzure.Storage.Blob;
-using TNCServicesPlatform.StorageAPI.Common;
-using System.Diagnostics;
 using Microsoft.Azure.Documents;
-using Newtonsoft.Json;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+using TNCServicesPlatform.DataModel.Interfaces;
+using TNCServicesPlatform.StorageAPI.Common;
+using TNCServicesPlatform.StorageAPI.Models;
 
 namespace TNCServicesPlatform.StorageAPI.Controllers
 {
@@ -157,9 +156,53 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
 
         [HttpPost]
         [Route("_echo")]
-        public async Task<IActionResult> Echo([FromBody] JObject item)
+        public string Echo([FromBody] string item)
         {
-            return this.Ok(new string[] { "Hello", "World", item.ToString() });
+            return "Hello World " + item;
+        }
+
+        [HttpPost]
+        [Route("UploadFiles")]
+        [EnableCors("AllowSpecificOrigin")]
+        public async Task<String> Upload([FromBody]IFormFile file)
+        {
+            // full path to file in temp location
+            var filePath = Path.GetTempFileName();
+
+            try
+            {
+                var fileName = file.FileName;
+                Uri uri = await this.UploadToAzure(fileName, file);
+                string photoUrl = uri.ToString();
+                return photoUrl;
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine(exc.Message);
+                return "TNC uploading failed.";
+            }
+        }
+
+        const string STORAGE_ACCOUNT = "AZURE_STORAGE_CONNECTION_STRING";
+        private async Task<Uri> UploadToAzure(string filename, IFormFile file)
+        {
+            // Parse the connection string and return a reference to the storage account.
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(System.Environment.GetEnvironmentVariable(STORAGE_ACCOUNT));
+            // Create the blob client.
+            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+            // Retrieve a reference to a container.
+            CloudBlobContainer container = blobClient.GetContainerReference("mycontainer");
+
+            // Create the container if it doesn't already exist.
+            await container.CreateIfNotExistsAsync();
+
+            // Retrieve reference to a blob named "myblob".
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(filename);
+
+            // Create or overwrite the "myblob" blob with contents from a local file.
+            await blockBlob.UploadFromStreamAsync(file.OpenReadStream());
+            return blockBlob.Uri;
         }
     }
 }
