@@ -78,7 +78,7 @@ namespace TNCServicesPlatform.APIHost
 
             services.AddCors();
 
-            services.AddMvc(o => o.InputFormatters.Insert(0, new RawRequestBodyFormatter()));
+            //services.AddMvc(o => o.InputFormatters.Insert(0, new RawRequestBodyFormatter()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -101,10 +101,12 @@ namespace TNCServicesPlatform.APIHost
             //    app.UseAuthentication();
             //}
 
+      
             app.UseCors(options =>
                 options.AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader());
+                
 
             app.UseMvc();
         }

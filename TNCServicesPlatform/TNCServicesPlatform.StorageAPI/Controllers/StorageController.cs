@@ -161,6 +161,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             return "Hello World " + item;
         }
 
+        /*
         [HttpPost]
         [Route("UploadFiles")]
         [EnableCors("AllowSpecificOrigin")]
@@ -204,5 +205,6 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             await blockBlob.UploadFromStreamAsync(file.OpenReadStream());
             return blockBlob.Uri;
         }
+        */
     }
 }
