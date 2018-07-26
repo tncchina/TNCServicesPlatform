@@ -2,6 +2,7 @@
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -42,6 +43,9 @@ namespace TNCImagePredictionConsole
                 image.ImageName = Path.GetFileNameWithoutExtension(imagePath);
                 image.FileFormat = Path.GetExtension(imagePath);
 
+                Stopwatch watch = new Stopwatch();
+                watch.Start();
+
                 // 1. Upload meta data to Cosmos DB
                 string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload2";
                 string imageJson = JsonConvert.SerializeObject(image);
@@ -57,6 +61,8 @@ namespace TNCImagePredictionConsole
                 string responseStr = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(responseStr);
                 AnimalImage imageResponse = JsonConvert.DeserializeObject<AnimalImage>(responseStr);
+                Console.WriteLine("\nGet Uploading URL: " + watch.ElapsedMilliseconds);
+                watch.Restart();
 
                 // 2. uppload image self to blob storage
                 byte[] blobContent = File.ReadAllBytes(imagePath);
@@ -67,6 +73,7 @@ namespace TNCImagePredictionConsole
                 {
                     await blob.UploadFromStreamAsync(msWrite);
                 }
+                Console.WriteLine("\nImage uploaded: " + watch.ElapsedMilliseconds);
 
                 return imageResponse;
             }
@@ -107,6 +114,7 @@ namespace TNCImagePredictionConsole
         {
             try
             {
+                Stopwatch watch = Stopwatch.StartNew();
                 var client = new HttpClient();
                 var uri = "http://tncapi.azurewebsites.net/api/prediction/cntk";
 
@@ -121,6 +129,7 @@ namespace TNCImagePredictionConsole
 
                 string res = await response.Content.ReadAsStringAsync();
                 var resObj = JsonConvert.DeserializeObject<ImagePredictionResult>(res);
+                Console.WriteLine("\nPrediction Time: " + watch.ElapsedMilliseconds + "\n");
                 foreach(var pre in resObj.Predictions)
                 {
                     Console.WriteLine(pre.Tag + ": " + pre.Probability);
