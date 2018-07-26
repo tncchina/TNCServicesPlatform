@@ -29,7 +29,7 @@ namespace TNCApp
             InitializeComponent();
         }
 
-        AnimalImage UploadImage(string imagePath)
+        async Task<AnimalImage> UploadImage(string imagePath)
         {
             try
             {
@@ -47,7 +47,9 @@ namespace TNCApp
                 using (var content = new ByteArrayContent(byteData))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    response = client.PostAsync(uploadUrl, content).Result;
+                    this.richTextBox1.Text = ("Sending image info to Cosmos DataBase");
+                    response = await client.PostAsync(uploadUrl, content);
+                    //response = client.PostAsync(uploadUrl, content).Result;
                 }
 
                 string responseStr = response.Content.ReadAsStringAsync().Result;
@@ -59,9 +61,11 @@ namespace TNCApp
                 CloudBlockBlob blob = new CloudBlockBlob(new Uri(imageResponse.UploadBlobSASUrl));
                 MemoryStream msWrite = new MemoryStream(blobContent);
                 msWrite.Position = 0;
+
                 using (msWrite)
                 {
-                    blob.UploadFromStreamAsync(msWrite).Wait();
+                    this.richTextBox1.Text = ("Uploading image data to Storage Colletion");
+                    await blob.UploadFromStreamAsync(msWrite);
                 }
 
                 return imageResponse;
@@ -73,7 +77,7 @@ namespace TNCApp
             }
         }
 
-        ImagePredictionResult MakePredictionRequestCNTK(string imageUrl)
+        async Task<ImagePredictionResult> MakePredictionRequestCNTK(string imageUrl)
         {
             try
             {
@@ -86,7 +90,7 @@ namespace TNCApp
                 using (var content = new ByteArrayContent(byteData))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    response = client.PostAsync(uri, content).Result;
+                    response = await client.PostAsync(uri, content);
                 }
 
                 string res = response.Content.ReadAsStringAsync().Result;
@@ -100,7 +104,7 @@ namespace TNCApp
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             try
             {
@@ -113,16 +117,19 @@ namespace TNCApp
                 string imagePath = openFileDialog1.FileName;
                 this.pictureBox1.ImageLocation = openFileDialog1.FileName;
 
-                AnimalImage image = UploadImage(imagePath);
+                AnimalImage image = await UploadImage(imagePath);
                 //this.richTextBox1.Text = image.UploadBlobSASUrl;
 
                 // 2. image classification
                 string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
-                var preResult = MakePredictionRequestCNTK(imageUrl);
+                this.richTextBox1.Text = ("Waiting for prediction result...");
+                var preResult = await MakePredictionRequestCNTK(imageUrl);
+                this.richTextBox1.Clear();
                 var sorted = preResult.Predictions.OrderByDescending(f => f.Probability);
                 foreach (var pre in sorted)
                 {
                     // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+
                     this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability + "\n";
                 }
             }

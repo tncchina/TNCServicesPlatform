@@ -7,8 +7,10 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TNCServicesPlatform.DataModel.Interfaces;
 using TNCServicesPlatform.StorageAPI.Common;
@@ -150,6 +152,55 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             catch (Exception ex)
             {
                 Trace.TraceError(ex.ToString());
+                throw;
+            }
+        }
+        //By Jiacheng Zhu
+        //reference:https://docs.microsoft.com/en-us/azure/cosmos-db/sql-api-get-started
+        [HttpGet]
+        [Route("Tags")]
+        public IEnumerable<string> GetTags()
+        {
+            try
+            {
+                // Set some common query options
+                FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+
+                IQueryable<AnimalImage> animalImageQuery = CosmosDBClient.CreateDocumentQuery<AnimalImage>(
+                        UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName), queryOptions)
+                    .Where(f => f.Tag != null);
+
+
+                return new List<AnimalImage>(animalImageQuery).Select(a => a.Tag);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+        //By Jiacheng Zhu
+        //reference:https://docs.microsoft.com/en-us/azure/cosmos-db/sql-api-get-started
+        [HttpGet]
+        [Route("GetByTags/{tag}")]
+        public IEnumerable<string> GetidByTag(string tag)
+        {
+            try
+            {
+                // Set some common query options
+                FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+
+                IQueryable<AnimalImage> animalImageQuery = CosmosDBClient.CreateDocumentQuery<AnimalImage>(
+                        UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName), queryOptions)
+                    .Where(f => f.Tag == tag);
+
+
+
+                return new List<AnimalImage>(animalImageQuery).Select(a => a.Id);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
                 throw;
             }
         }
