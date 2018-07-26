@@ -47,7 +47,7 @@ namespace TNCApp
                 using (var content = new ByteArrayContent(byteData))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    this.richTextBox1.Text = ("uploading ");
+                    this.richTextBox1.Text = ("Sending image info to Cosmos DataBase");
                     response = await client.PostAsync(uploadUrl, content);
                     //response = client.PostAsync(uploadUrl, content).Result;
                 }
@@ -61,8 +61,10 @@ namespace TNCApp
                 CloudBlockBlob blob = new CloudBlockBlob(new Uri(imageResponse.UploadBlobSASUrl));
                 MemoryStream msWrite = new MemoryStream(blobContent);
                 msWrite.Position = 0;
+
                 using (msWrite)
                 {
+                    this.richTextBox1.Text = ("Uploading image data to Storage Colletion");
                     await blob.UploadFromStreamAsync(msWrite);
                 }
 
