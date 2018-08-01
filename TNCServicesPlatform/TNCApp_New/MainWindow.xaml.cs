@@ -1,33 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.Cognitive.CustomVision.Training.Models;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Newtonsoft.Json;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
+using System.Windows;
+using Newtonsoft.Json;
+using System;
+using System.Collections;
+using System.IO;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Forms;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using Microsoft.Cognitive.CustomVision.Training.Models;
 using TNCServicesPlatform.StorageAPI.Models;
-using System.Globalization;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using Microsoft.WindowsAzure.Storage.Blob;
 
-namespace TNCApp
+namespace TNCApp_New
 {
-    public partial class MainForm : Form
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
     {
-        public MainForm()
+        public MainWindow()
         {
             InitializeComponent();
+            this.UploadingBar.Value = 0;
+            
+            
         }
 
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            this.DragMove();
+        }
         async Task<AnimalImage> UploadImage(string imagePath)
         {
             try
@@ -47,7 +62,8 @@ namespace TNCApp
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     this.richTextBox1.Text = ("Sending image info to Cosmos DataBase");
-                    response = await client.PostAsync(uploadUrl, content);
+                    this.UploadingBar.Value += 33;
+                   response = await client.PostAsync(uploadUrl, content);
                     //response = client.PostAsync(uploadUrl, content).Result;
                 }
 
@@ -65,6 +81,7 @@ namespace TNCApp
                 {
                     this.richTextBox1.Text = ("Uploading image data to Storage Colletion");
                     await blob.UploadFromStreamAsync(msWrite);
+                    this.UploadingBar.Value += 33;
                 }
 
                 return imageResponse;
@@ -90,6 +107,7 @@ namespace TNCApp
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     response = await client.PostAsync(uri, content);
+                    this.UploadingBar.Value += 33;
                 }
 
                 string res = response.Content.ReadAsStringAsync().Result;
@@ -102,19 +120,33 @@ namespace TNCApp
                 throw ex;
             }
         }
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+ 
+        }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void Home_Click(object sender, RoutedEventArgs e)
+        {
+            this.ListV.ItemsSource = new List<String>();
+            this.UploadingBar.Value = 0;
+            this.richTextBox1.Clear();
+
+        }
+
+        private async void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                DialogResult result = openFileDialog1.ShowDialog(); // Show the dialog.
-                if (result == DialogResult.OK) // Test result.
-                {
-                }
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.ShowDialog(); // Show the dialog.
+//                                if (result == DialogResult.OK) // Test result.
+//                                {
+//                                }
 
                 // 1. upload image
-                string imagePath = openFileDialog1.FileName;
-                this.pictureBox1.ImageLocation = openFileDialog1.FileName;
+                string imagePath = openFileDialog.FileName;
+                
+                this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
 
                 AnimalImage image = await UploadImage(imagePath);
                 //this.richTextBox1.Text = image.UploadBlobSASUrl;
@@ -123,27 +155,36 @@ namespace TNCApp
                 string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
                 this.richTextBox1.Text = ("Waiting for prediction result...");
                 var preResult = await MakePredictionRequestCNTK(imageUrl);
+                this.UploadingBar.Value += 33;
                 this.richTextBox1.Clear();
+                List<String> items = new List<String>();
                 var sorted = preResult.Predictions.OrderByDescending(f => f.Probability);
                 foreach (var pre in sorted)
                 {
                     // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                    items.Add(pre.Tag + ":  " + Math.Round(pre.Probability*100,6) + "%\n");
+                    
 
-                    this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability + "\n";
                 }
+                this.ListV.ItemsSource = items;
+                this.richTextBox1.Text = "Done Uploading";
+               
             }
             catch (Exception ex)
             {
-                this.richTextBox1.Text = ex.ToString();
+                //this.ListV.Items.Clear();
+                //this.ListV.Items.Add(ex.ToString());
+                throw ex;
             }
         }
 
-        private void openFileDialog1_FileOk(object sender, CancelEventArgs e)
+
+        private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
 
         }
 
-        private void pictureBox1_Click(object sender, EventArgs e)
+        private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
         }

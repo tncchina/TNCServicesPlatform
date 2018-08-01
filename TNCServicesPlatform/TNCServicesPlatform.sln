@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCWeb", "TNCWeb\TNCWeb.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCApp", "TNCApp\TNCApp.csproj", "{B6FA2794-CA17-47AB-91F9-7203AB1CFEA4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCApp_New", "TNCApp_New\TNCApp_New.csproj", "{9D03D81F-3373-4422-8A18-86B8B8FA8907}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,14 @@ Global
 		{B6FA2794-CA17-47AB-91F9-7203AB1CFEA4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B6FA2794-CA17-47AB-91F9-7203AB1CFEA4}.Release|x64.ActiveCfg = Release|Any CPU
 		{B6FA2794-CA17-47AB-91F9-7203AB1CFEA4}.Release|x64.Build.0 = Release|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Debug|x64.Build.0 = Debug|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|x64.ActiveCfg = Release|Any CPU
+		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
