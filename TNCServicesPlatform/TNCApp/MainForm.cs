@@ -34,8 +34,7 @@ namespace TNCApp
             {
                 var client = new HttpClient();
                 AnimalImage image = new AnimalImage();
-                image.ImageName = Path.GetFileNameWithoutExtension(imagePath);
-                image.FileFormat = Path.GetExtension(imagePath);
+                image.ImageName = Path.GetFileName(imagePath);
 
                 // 1. Upload meta data to Cosmos DB
                 string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload2";
