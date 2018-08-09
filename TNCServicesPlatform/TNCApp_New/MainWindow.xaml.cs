@@ -10,7 +10,9 @@ using System.Windows;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
+using System.Drawing;
 using System.IO;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -19,10 +21,16 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using System.Windows.Threading;
+using CNTK;
+using CNTKImageProcessing;
 using Microsoft.Cognitive.CustomVision.Training.Models;
 using TNCServicesPlatform.StorageAPI.Models;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using Microsoft.WindowsAzure.Storage.Blob;
+using TNCAnimalLabelWebAPI;
+using TNCAnimalLabelWebAPI.Models;
+using TNCApp_New.CNTK;
 
 namespace TNCApp_New
 {
@@ -31,12 +39,15 @@ namespace TNCApp_New
     /// </summary>
     public partial class MainWindow : Window
     {
+        public bool StateLocal { get; set; }
         public MainWindow()
         {
+            
             InitializeComponent();
             this.UploadingBar.Value = 0;
-            
-            
+            this.StateLocal = true;
+
+
         }
 
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -120,32 +131,83 @@ namespace TNCApp_New
                 throw ex;
             }
         }
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
- 
-        }
 
         private void Home_Click(object sender, RoutedEventArgs e)
         {
             this.ListV.ItemsSource = new List<String>();
             this.UploadingBar.Value = 0;
             this.richTextBox1.Clear();
+            this.pictureBox1.Source = new BitmapImage();
 
         }
 
-        private async void BtnUpload_Click(object sender, RoutedEventArgs e)
+     
+    
+        void LocalProcess()
+        {
+            this.ListV.ItemsSource = new List<String>();
+            this.UploadingBar.Value = 0;
+            this.richTextBox1.Clear();
+            this.pictureBox1.Source = new BitmapImage();
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Multiselect = true;
+            openFileDialog.ShowDialog();
+            var imagePaths = openFileDialog.FileNames;
+            this.richTextBox1.Text = ("Processing...");
+            AllowUIToUpdate();
+            var totalFilesNum = imagePaths.Length;
+            var csv = new StringBuilder();
+            var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+            csv.AppendLine(newLine);
+            List<String> items = new List<String>();
+            foreach (String imagePath in imagePaths)
+            {
+
+                var result = LocalPrediction.EvaluateCustomDNN(imagePath);
+
+                var sorted = result.Predictions.OrderByDescending(f => f.Probability);
+                this.ListV.ItemsSource = new List<String>();
+                items = new List<string>();
+                foreach (var pre in sorted)
+                {
+                    // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                    items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+
+                }
+                this.ListV.ItemsSource = items;
+                this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
+                this.UploadingBar.Value += Math.Round(1.0 / totalFilesNum * 100);
+                AllowUIToUpdate();
+
+
+                var first = sorted.ToList()[0].Tag;
+                var second = sorted.ToList()[0].Probability;
+                newLine  = string.Format("{0},{1},{2}",
+                    first,
+                    second,
+                    Path.GetExtension(imagePath)
+                    ); 
+
+                csv.AppendLine(newLine);
+            }
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.ShowDialog();
+            var filePath= saveFileDialog.FileName;
+            File.WriteAllText(filePath, csv.ToString(), Encoding.UTF8);
+            this.UploadingBar.Value =100;
+            this.richTextBox1.Text = ("Done");
+        }
+
+        async void OnlineProcess()
         {
             try
             {
                 OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.ShowDialog(); // Show the dialog.
-//                                if (result == DialogResult.OK) // Test result.
-//                                {
-//                                }
+                openFileDialog.ShowDialog(); 
 
                 // 1. upload image
                 string imagePath = openFileDialog.FileName;
-                
+
                 this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
 
                 AnimalImage image = await UploadImage(imagePath);
@@ -162,13 +224,13 @@ namespace TNCApp_New
                 foreach (var pre in sorted)
                 {
                     // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
-                    items.Add(pre.Tag + ":  " + Math.Round(pre.Probability*100,6) + "%\n");
-                    
+                    items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+
 
                 }
                 this.ListV.ItemsSource = items;
                 this.richTextBox1.Text = "Done Uploading";
-               
+
             }
             catch (Exception ex)
             {
@@ -177,7 +239,37 @@ namespace TNCApp_New
                 throw ex;
             }
         }
+        private  void BtnUpload_Click(object sender, RoutedEventArgs e)
+        {
+            if (StateLocal)
+            {
+                LocalProcess();
+            }
+            else
+            {
+                OnlineProcess();
+            }
+           
+        }
 
+        void AllowUIToUpdate()
+        {
+
+            DispatcherFrame frame = new DispatcherFrame();
+
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Render, new DispatcherOperationCallback(delegate (object parameter)
+
+            {
+
+                frame.Continue = false;
+
+                return null;
+
+            }), null);
+
+            Dispatcher.PushFrame(frame);
+
+        }
 
         private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
