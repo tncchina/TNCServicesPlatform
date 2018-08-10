@@ -168,6 +168,15 @@
   <ItemGroup>
     <Resource Include="iconR\TNC.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Background\Picture1.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Background\Picture2.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Background\Picture3.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\CNTK.Deps.Cuda.2.5.1\build\net45\CNTK.Deps.Cuda.targets" Condition="Exists('..\packages\CNTK.Deps.Cuda.2.5.1\build\net45\CNTK.Deps.Cuda.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

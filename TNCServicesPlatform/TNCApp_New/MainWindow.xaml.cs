@@ -102,7 +102,7 @@ namespace TNCApp_New
             }
         }
 
-        async Task<ImagePredictionResult> MakePredictionRequestCNTK(string imageUrl)
+        async Task<ImagePredictionResultModel> MakePredictionRequestCNTK(string imageUrl)
         {
             try
             {
@@ -120,7 +120,7 @@ namespace TNCApp_New
                 }
 
                 string res = response.Content.ReadAsStringAsync().Result;
-                var resObj = JsonConvert.DeserializeObject<ImagePredictionResult>(res);
+                var resObj = JsonConvert.DeserializeObject<ImagePredictionResultModel>(res);
                 return resObj;
             }
             catch (Exception ex)
@@ -139,9 +139,9 @@ namespace TNCApp_New
 
         }
 
-     
-    
-        void LocalProcess()
+
+
+        async void LocalProcess()
         {
 
 
@@ -152,6 +152,8 @@ namespace TNCApp_New
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Multiselect = true;
             openFileDialog.ShowDialog();
+            var csv = new StringBuilder();
+           
             switch (Path.GetExtension(openFileDialog.FileName))
             {
                 case ".jpg":
@@ -159,16 +161,34 @@ namespace TNCApp_New
                     this.richTextBox1.Text = ("Processing...");
                     AllowUIToUpdate();
                     var totalFilesNum = imagePaths.Length;
-                    var csv = new StringBuilder();
                     var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+                    string cameraNumber;
+                    string folderName;
+                    string positionNumber;
+                    int workDays =1 ;
+                    var Last_WorkDay = File.GetCreationTime(imagePaths[0]).Date;
                     csv.AppendLine(newLine);
                     int i = 0;
+                    ImagePredictionResultModel result;
                     List<String> items = new List<String>();
                     foreach (String imagePath in imagePaths)
                     {
-
-                        var result = LocalPrediction.EvaluateCustomDNN(imagePath);
-
+                        var shootingDate = File.GetCreationTime(imagePath).Date;
+                        var shootingTime = File.GetCreationTime(imagePath).ToShortTimeString();
+                         workDays += (shootingDate - Last_WorkDay).Days;
+                        if (this.StateLocal != true)
+                        {
+                            AnimalImage image = await UploadImage(imagePath);
+                            //this.richTextBox1.Text = image.UploadBlobSASUrl;
+                            // 2. image classification
+                            string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
+                            this.richTextBox1.Text = ("Waiting for prediction result...");
+                             result = await MakePredictionRequestCNTK(imageUrl);
+                        }
+                        else
+                        {
+                             result = LocalPrediction.EvaluateCustomDNN(imagePath);
+                        }
                         var sorted = result.Predictions.OrderByDescending(f => f.Probability);
                         this.ListV.ItemsSource = new List<String>();
                         items = new List<string>();
@@ -190,14 +210,15 @@ namespace TNCApp_New
                             $"{first}-{i.ToString("D4")}",
                             Path.GetFileNameWithoutExtension(imagePath),
                             Path.GetExtension(imagePath),
-                            first,
-                            second,
-                            first,
-                            File.GetCreationTime(imagePath),
-                            File.GetCreationTime(imagePath),
-                            1,
-                            2,
-                            3,
+                            //folderName,
+                            //cameraNumber,
+                            //positionNumber,
+                            shootingDate,
+                            shootingTime,
+                            workDays,
+                            "Unkown Type",
+                            sorted.ToList<Prediction>()[0].Tag,
+                            sorted.ToList<Prediction>()[0].Probability,
                             4,
                             5,
                             6,
@@ -206,15 +227,12 @@ namespace TNCApp_New
 
                         csv.AppendLine(newLine);
                     }
-                    SaveFileDialog saveFileDialog = new SaveFileDialog();
-                    saveFileDialog.ShowDialog();
-                    var filePath = saveFileDialog.FileName;
-                    File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
-                    return;
+                    break; 
                 case ".csv":
                     double ss;
                     var imagePath1 = openFileDialog.FileName;
-                    csv = new StringBuilder();
+                    this.richTextBox1.Text = ("Processing...");
+                    
                     using (var reader = new StreamReader(imagePath1, Encoding.Default))
                     {
 
@@ -246,7 +264,19 @@ namespace TNCApp_New
                             }
                             var NewPath = Path.GetDirectoryName(imagePath1) + $"\\{FolderName}\\{FileName}.{extension}";
                             if (!File.Exists(NewPath)) continue;
-                            var result = LocalPrediction.EvaluateCustomDNN(NewPath);
+                            if (this.StateLocal != true)
+                            {
+                                AnimalImage image = await UploadImage(NewPath);
+                                //this.richTextBox1.Text = image.UploadBlobSASUrl;
+                                // 2. image classification
+                                string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
+                                this.richTextBox1.Text = ("Waiting for prediction result...");
+                                result = await MakePredictionRequestCNTK(imageUrl);
+                            }
+                            else
+                            {
+                                result = LocalPrediction.EvaluateCustomDNN(NewPath);
+                            }
                             var sorted = result.Predictions.OrderByDescending(f => f.Probability);
                             this.ListV.ItemsSource = new List<String>();
                             items = new List<string>();
@@ -264,22 +294,20 @@ namespace TNCApp_New
                             var predictions = sorted.ToList<Prediction>();
                             line = line.Replace("\r", $",{predictions[0].Tag},{predictions[0].Probability},{predictions[1].Tag},{predictions[1].Probability},{predictions[2].Tag},{predictions[2].Probability}," + "\r");
                             csv.AppendLine(line);
-
-
                         }
                     }
-                    saveFileDialog = new SaveFileDialog();
-                    saveFileDialog.ShowDialog();
-                    filePath = saveFileDialog.FileName;
-                    File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
-                    this.UploadingBar.Value = 100;
-                    return;
+                    break;
                 default:this.richTextBox1.Text=("input not valid");
                     return;
             }
-
-            this.UploadingBar.Value =100;
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.ShowDialog();
+            var filePath = saveFileDialog.FileName;
+            File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
+            this.UploadingBar.Value = 100;
             this.richTextBox1.Text = ("Done");
+            return;
+
         }
 
         async void OnlineProcess()
@@ -325,14 +353,14 @@ namespace TNCApp_New
         }
         private  void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
-            if (StateLocal)
-            {
+           // if (StateLocal)
+          //  {
                 LocalProcess();                
-            }
-            else
-            {
-                OnlineProcess();
-            }
+//}
+          //  else
+         //   {
+          //      OnlineProcess();
+         //   }
            
         }
 
@@ -363,6 +391,24 @@ namespace TNCApp_New
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
+        }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+           
+        }
+
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            this.StateLocal = false;
+            this.TextLineBox.Text = "Online";
+        }
+
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            this.StateLocal = true;
+            this.TextLineBox.Text = "Offline";
         }
     }
 }
