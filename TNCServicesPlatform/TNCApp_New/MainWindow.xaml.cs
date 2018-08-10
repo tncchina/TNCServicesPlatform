@@ -8,10 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
-using System;
 using System.Collections;
 using System.Drawing;
-using System.IO;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -145,6 +143,8 @@ namespace TNCApp_New
     
         void LocalProcess()
         {
+
+
             this.ListV.ItemsSource = new List<String>();
             this.UploadingBar.Value = 0;
             this.richTextBox1.Clear();
@@ -152,48 +152,132 @@ namespace TNCApp_New
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Multiselect = true;
             openFileDialog.ShowDialog();
-            var imagePaths = openFileDialog.FileNames;
-            this.richTextBox1.Text = ("Processing...");
-            AllowUIToUpdate();
-            var totalFilesNum = imagePaths.Length;
-            var csv = new StringBuilder();
-            var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
-            csv.AppendLine(newLine);
-            List<String> items = new List<String>();
-            foreach (String imagePath in imagePaths)
+            switch (Path.GetExtension(openFileDialog.FileName))
             {
+                case ".jpg":
+                    var imagePaths = openFileDialog.FileNames;
+                    this.richTextBox1.Text = ("Processing...");
+                    AllowUIToUpdate();
+                    var totalFilesNum = imagePaths.Length;
+                    var csv = new StringBuilder();
+                    var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+                    csv.AppendLine(newLine);
+                    int i = 0;
+                    List<String> items = new List<String>();
+                    foreach (String imagePath in imagePaths)
+                    {
 
-                var result = LocalPrediction.EvaluateCustomDNN(imagePath);
+                        var result = LocalPrediction.EvaluateCustomDNN(imagePath);
 
-                var sorted = result.Predictions.OrderByDescending(f => f.Probability);
-                this.ListV.ItemsSource = new List<String>();
-                items = new List<string>();
-                foreach (var pre in sorted)
-                {
-                    // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
-                    items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+                        var sorted = result.Predictions.OrderByDescending(f => f.Probability);
+                        this.ListV.ItemsSource = new List<String>();
+                        items = new List<string>();
+                        foreach (var pre in sorted)
+                        {
+                            // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                            items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
 
-                }
-                this.ListV.ItemsSource = items;
-                this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
-                this.UploadingBar.Value += Math.Round(1.0 / totalFilesNum * 100);
-                AllowUIToUpdate();
+                        }
+                        this.ListV.ItemsSource = items;
+                        this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
+                        this.UploadingBar.Value += Math.Round(1.0 / totalFilesNum * 100);
+                        AllowUIToUpdate();
+
+                        //lots of variable not doing
+                        var first = "test";
+                        var second = sorted.ToList()[0].Probability;
+                        newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},",
+                            $"{first}-{i.ToString("D4")}",
+                            Path.GetFileNameWithoutExtension(imagePath),
+                            Path.GetExtension(imagePath),
+                            first,
+                            second,
+                            first,
+                            File.GetCreationTime(imagePath),
+                            File.GetCreationTime(imagePath),
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7
+                            );
+
+                        csv.AppendLine(newLine);
+                    }
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.ShowDialog();
+                    var filePath = saveFileDialog.FileName;
+                    File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
+                    return;
+                case ".csv":
+                    double ss;
+                    var imagePath1 = openFileDialog.FileName;
+                    csv = new StringBuilder();
+                    using (var reader = new StreamReader(imagePath1, Encoding.Default))
+                    {
+
+                        var file = new StreamReader(imagePath1).ReadToEnd(); 
+                        var lines = file.Split('\n');
+                        var count = lines.Count();
+                        var N_count = count;
+                        for (int j = 0; j<count;j++)
+                        {
+                            var line = lines[j];
+
+                            if (j == 0)
+                            {
+                                line = line.Replace("\r", ",预测种类1,预测概率1,预测种类2,预测概率2,预测种类3,预测概率3" + "\r");
+                                csv.AppendLine(line);
+                                continue;
+                            }
+                            var values = line.Split(',');
+                            if (values.Count() < 2){
+                                continue;
+                            }
+                            var FileName = values[0];
+                            var FolderName = values[3];
+                            var extension = values[2];
+                            if (extension != "JPG")
+                            {
+                                 csv.AppendLine(line);
+                                continue;
+                            }
+                            var NewPath = Path.GetDirectoryName(imagePath1) + $"\\{FolderName}\\{FileName}.{extension}";
+                            if (!File.Exists(NewPath)) continue;
+                            var result = LocalPrediction.EvaluateCustomDNN(NewPath);
+                            var sorted = result.Predictions.OrderByDescending(f => f.Probability);
+                            this.ListV.ItemsSource = new List<String>();
+                            items = new List<string>();
+                            foreach (var pre in sorted)
+                            {
+                                // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                                items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+
+                            }
+                            this.ListV.ItemsSource = items;
+                            this.pictureBox1.Source = new BitmapImage(new Uri(NewPath, UriKind.RelativeOrAbsolute));
+                            ss = j;
+                            this.UploadingBar.Value = Math.Round(ss / N_count * 100);
+                            AllowUIToUpdate();
+                            var predictions = sorted.ToList<Prediction>();
+                            line = line.Replace("\r", $",{predictions[0].Tag},{predictions[0].Probability},{predictions[1].Tag},{predictions[1].Probability},{predictions[2].Tag},{predictions[2].Probability}," + "\r");
+                            csv.AppendLine(line);
 
 
-                var first = sorted.ToList()[0].Tag;
-                var second = sorted.ToList()[0].Probability;
-                newLine  = string.Format("{0},{1},{2}",
-                    first,
-                    second,
-                    Path.GetExtension(imagePath)
-                    ); 
-
-                csv.AppendLine(newLine);
+                        }
+                    }
+                    saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.ShowDialog();
+                    filePath = saveFileDialog.FileName;
+                    File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
+                    this.UploadingBar.Value = 100;
+                    return;
+                default:this.richTextBox1.Text=("input not valid");
+                    return;
             }
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.ShowDialog();
-            var filePath= saveFileDialog.FileName;
-            File.WriteAllText(filePath, csv.ToString(), Encoding.UTF8);
+
             this.UploadingBar.Value =100;
             this.richTextBox1.Text = ("Done");
         }
@@ -243,7 +327,7 @@ namespace TNCApp_New
         {
             if (StateLocal)
             {
-                LocalProcess();
+                LocalProcess();                
             }
             else
             {

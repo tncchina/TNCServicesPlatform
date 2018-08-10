@@ -91,7 +91,7 @@ public class RawRequestBodyFormatter : InputFormatter
                 return await InputFormatterResult.SuccessAsync(content);
             }
 
-        return await InputFormatterResult.FailureAsync();
+        //return await InputFormatterResult.FailureAsync();
     }
 }
 }
