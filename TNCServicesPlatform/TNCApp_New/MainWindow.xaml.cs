@@ -218,7 +218,7 @@ namespace TNCApp_New
                     using (var reader = new StreamReader(imagePath1, Encoding.Default))
                     {
 
-                        var file = new StreamReader(imagePath1).ReadToEnd(); 
+                        var file = new StreamReader(imagePath1, Encoding.Default).ReadToEnd(); 
                         var lines = file.Split('\n');
                         var count = lines.Count();
                         var N_count = count;
