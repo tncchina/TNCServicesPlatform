@@ -10,7 +10,9 @@ namespace TNCServicesPlatform.StorageAPI.Common
             string sas = blockblob.GetSharedAccessSignature(
                 new SharedAccessBlobPolicy
                 {
-                    Permissions = SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.List,
+
+                    Permissions = SharedAccessBlobPermissions.List | SharedAccessBlobPermissions.Create | SharedAccessBlobPermissions.Read | SharedAccessBlobPermissions.Write,
+
                     SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1)
                 });
 
