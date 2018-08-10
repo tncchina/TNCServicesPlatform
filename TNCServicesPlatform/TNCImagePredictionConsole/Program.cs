@@ -41,7 +41,6 @@ namespace TNCImagePredictionConsole
                 var client = new HttpClient();
                 AnimalImage image = new AnimalImage();
                 image.ImageName = Path.GetFileNameWithoutExtension(imagePath);
-                image.FileFormat = Path.GetExtension(imagePath);
 
                 Stopwatch watch = new Stopwatch();
                 watch.Start();

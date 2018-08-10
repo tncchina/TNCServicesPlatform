@@ -13,8 +13,6 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web;
 using TNCServicesPlatform.StorageAPI.Models;
 using System.Globalization;
