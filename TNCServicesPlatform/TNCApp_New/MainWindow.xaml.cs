@@ -376,12 +376,12 @@ namespace TNCApp_New
         {
             // if (StateLocal)
             //  {
-            DataVisualization dlg = new DataVisualization();
+            DataVisualization div = new DataVisualization();
 
             // Configure the dialog box
-            dlg.Owner = this;
+            div.Owner = this;
             // Open the dialog box modally 
-            dlg.ShowDialog();
+            div.ShowDialog();
             LocalProcess();                
 //}
           //  else
