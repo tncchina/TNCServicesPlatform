@@ -374,9 +374,15 @@ namespace TNCApp_New
         }
         private  void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
-           // if (StateLocal)
-          //  {
-                LocalProcess();                
+            // if (StateLocal)
+            //  {
+            DataVisualization dlg = new DataVisualization();
+
+            // Configure the dialog box
+            dlg.Owner = this;
+            // Open the dialog box modally 
+            dlg.ShowDialog();
+            LocalProcess();                
 //}
           //  else
          //   {

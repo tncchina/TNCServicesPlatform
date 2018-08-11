@@ -316,8 +316,8 @@
             <Grid HorizontalAlignment="Left" Height="646" VerticalAlignment="Top" Width="129" Margin="10,0,0,0">
                 <Button x:Name ="BtnHome" Content="Home" HorizontalAlignment="Left" Margin="-9,133,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Home_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
                 <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,133,0,0" Source="iconR/Dog House_40px.png"/>
-                <Button x:Name ="BtnUpload" Content="Prediction" HorizontalAlignment="Left" Margin="-9,261,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BtnUpload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,261,0,0" Source="iconR/Maintenance_40px.png"/>
+                <Button x:Name ="BtnUpload" Content="Prediction" HorizontalAlignment="Right" Margin="-9,232,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BtnUpload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,232,0,0" Source="iconR/Maintenance_40px.png"/>
                 <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,333,0,0" Source="iconR/Globe Earth_40px.png"/>
             </Grid>
             <CheckBox Content="" HorizontalAlignment="Left" Margin="10,368,0,0" VerticalAlignment="Top" Style="{DynamicResource OrangeSwitchStyle}" RenderTransformOrigin="0.412,1.861" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
