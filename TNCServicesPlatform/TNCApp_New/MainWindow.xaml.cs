@@ -56,6 +56,7 @@ namespace TNCApp_New
         {
             try
             {
+                this.UploadingBar.Value = 0;
                 var client = new HttpClient();
                 AnimalImage image = new AnimalImage();
                 image.ImageName = Path.GetFileName(imagePath);
@@ -156,24 +157,39 @@ namespace TNCApp_New
             switch (Path.GetExtension(openFileDialog.FileName))
             {
                 case ".jpg":
+                case ".JPG":
                     var imagePaths = openFileDialog.FileNames;
                     this.richTextBox1.Text = ("Processing...");
                     AllowUIToUpdate();
                     var totalFilesNum = imagePaths.Length;
                     var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
-                    string cameraNumber;
-                    string folderName;
-                    string positionNumber;
+                    Window1 dlg = new Window1();
+
+                    // Configure the dialog box
+                    dlg.Owner = this;
+                    // Open the dialog box modally 
+                    dlg.ShowDialog();
+                    dlg.Top = this.Top + 20;
+                    //this.PopUpBar.Visibility = Visibility.Visible;
+                    string cameraNumber= dlg.CameraNumber.Text;
+                    string folderName= dlg.CameraLocation.Text;
+                    string positionNumber= dlg.CameraLocation.Text;
                     int workDays =1 ;
                     var Last_WorkDay = File.GetCreationTime(imagePaths[0]).Date;
                     csv.AppendLine(newLine);
                     int i = 0;
                     ImagePredictionResultModel result;
                     List<String> items = new List<String>();
+                    string folderPath = Path.GetDirectoryName(imagePaths[0]);
+                    string pathString = System.IO.Path.Combine(folderPath, folderName);
+                    System.IO.Directory.CreateDirectory(pathString);
                     foreach (String imagePath in imagePaths)
                     {
+                        Bitmap bmp = new Bitmap(imagePath);
                         var shootingDate = File.GetCreationTime(imagePath).Date;
                         var shootingTime = File.GetCreationTime(imagePath).ToShortTimeString();
+                        var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
+                        var fileExt = Path.GetExtension(imagePath);
                          workDays += (shootingDate - Last_WorkDay).Days;
                         if (this.StateLocal != true)
                         {
@@ -203,15 +219,13 @@ namespace TNCApp_New
                         AllowUIToUpdate();
 
                         //lots of variable not doing
-                        var first = "test";
-                        var second = sorted.ToList()[0].Probability;
-                        newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},",
-                            $"{first}-{i.ToString("D4")}",
-                            Path.GetFileNameWithoutExtension(imagePath),
-                            Path.GetExtension(imagePath),
-                            //folderName,
-                            //cameraNumber,
-                            //positionNumber,
+                        newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
+                            $"{positionNumber}-{i.ToString("D4")}",
+                            fileNameNoext,
+                            fileExt,
+                            folderName,
+                            cameraNumber,
+                            positionNumber,
                             shootingDate,
                             shootingTime,
                             workDays,
@@ -223,11 +237,16 @@ namespace TNCApp_New
                             6,
                             7
                             );
-
                         csv.AppendLine(newLine);
+                        bmp.Save($"{Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
+                        i++;
                     }
-                    break; 
+                    File.WriteAllText(Path.Combine(pathString, $"{positionNumber}.csv"), csv.ToString(), Encoding.Default);
+                    this.UploadingBar.Value = 100;
+                    this.richTextBox1.Text = ("Done");
+                    return; 
                 case ".csv":
+                case ".CSV":
                     double ss;
                     var imagePath1 = openFileDialog.FileName;
                     this.richTextBox1.Text = ("Processing...");
@@ -299,6 +318,9 @@ namespace TNCApp_New
                 default:this.richTextBox1.Text=("input not valid");
                     return;
             }
+
+
+
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.ShowDialog();
             var filePath = saveFileDialog.FileName;
@@ -408,6 +430,11 @@ namespace TNCApp_New
         {
             this.StateLocal = true;
             this.TextLineBox.Text = "Offline";
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
