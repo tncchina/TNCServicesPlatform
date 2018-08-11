@@ -153,7 +153,7 @@ namespace TNCApp_New
             openFileDialog.Multiselect = true;
             openFileDialog.ShowDialog();
             var csv = new StringBuilder();
-           
+            IDictionary<string, int> dict = new Dictionary<string, int>();
             switch (Path.GetExtension(openFileDialog.FileName))
             {
                 case ".jpg":
@@ -183,6 +183,7 @@ namespace TNCApp_New
                     string folderPath = Path.GetDirectoryName(imagePaths[0]);
                     string pathString = System.IO.Path.Combine(folderPath, folderName);
                     System.IO.Directory.CreateDirectory(pathString);
+                    
                     foreach (String imagePath in imagePaths)
                     {
                         Bitmap bmp = new Bitmap(imagePath);
@@ -237,6 +238,14 @@ namespace TNCApp_New
                             6,
                             7
                             );
+                        if (dict.ContainsKey(sorted.ToList<Prediction>()[0].Tag))
+                        {
+                            dict[sorted.ToList<Prediction>()[0].Tag]++;
+                        }
+                        else
+                        {
+                            dict.Add(sorted.ToList<Prediction>()[0].Tag, 0);
+                        }
                         csv.AppendLine(newLine);
                         bmp.Save($"{Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
                         i++;
@@ -244,6 +253,12 @@ namespace TNCApp_New
                     File.WriteAllText(Path.Combine(pathString, $"{positionNumber}.csv"), csv.ToString(), Encoding.Default);
                     this.UploadingBar.Value = 100;
                     this.richTextBox1.Text = ("Done");
+                    DataVisualization div = new DataVisualization(dict);
+
+                    // Configure the dialog box
+                    div.Owner = this;
+                    // Open the dialog box modally 
+                    div.ShowDialog();
                     return; 
                 case ".csv":
                 case ".CSV":
@@ -312,22 +327,38 @@ namespace TNCApp_New
                             var predictions = sorted.ToList<Prediction>();
                             line = line.Replace("\r", $",{predictions[0].Tag},{predictions[0].Probability},{predictions[1].Tag},{predictions[1].Probability},{predictions[2].Tag},{predictions[2].Probability}," + "\r");
                             csv.AppendLine(line);
+                            if (dict.ContainsKey(sorted.ToList<Prediction>()[0].Tag))
+                            {
+                                dict[sorted.ToList<Prediction>()[0].Tag]++;
+                            }
+                            else
+                            {
+                                dict.Add(sorted.ToList<Prediction>()[0].Tag, 1);
+                            }
+                                
+                            
                         }
                     }
-                    break;
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.ShowDialog();
+                    var filePath = saveFileDialog.FileName;
+                    File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
+                    this.UploadingBar.Value = 100;
+                    this.richTextBox1.Text = ("Done");
+                    div = new DataVisualization(dict);
+
+                    // Configure the dialog box
+                    div.Owner = this;
+                    // Open the dialog box modally 
+                    div.ShowDialog();
+                    return;
                 default:this.richTextBox1.Text=("input not valid");
                     return;
             }
 
 
 
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.ShowDialog();
-            var filePath = saveFileDialog.FileName;
-            File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
-            this.UploadingBar.Value = 100;
-            this.richTextBox1.Text = ("Done");
-            return;
+
 
         }
 
@@ -374,20 +405,8 @@ namespace TNCApp_New
         }
         private  void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
-            // if (StateLocal)
-            //  {
-            DataVisualization div = new DataVisualization();
-
-            // Configure the dialog box
-            div.Owner = this;
-            // Open the dialog box modally 
-            div.ShowDialog();
             LocalProcess();                
-//}
-          //  else
-         //   {
-          //      OnlineProcess();
-         //   }
+
            
         }
 
