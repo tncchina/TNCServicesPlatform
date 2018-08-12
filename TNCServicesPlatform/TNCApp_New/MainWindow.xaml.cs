@@ -52,6 +52,7 @@ namespace TNCApp_New
         {
             this.DragMove();
         }
+        //using the image path, upload the image to cosmos and storage account
         async Task<AnimalImage> UploadImage(string imagePath)
         {
             try
@@ -244,7 +245,7 @@ namespace TNCApp_New
                         }
                         else
                         {
-                            dict.Add(sorted.ToList<Prediction>()[0].Tag, 0);
+                            dict.Add(sorted.ToList<Prediction>()[0].Tag, 1);
                         }
                         csv.AppendLine(newLine);
                         bmp.Save($"{Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
@@ -258,7 +259,7 @@ namespace TNCApp_New
                     // Configure the dialog box
                     div.Owner = this;
                     // Open the dialog box modally 
-                    div.ShowDialog();
+                    div.Show();
                     return; 
                 case ".csv":
                 case ".CSV":
@@ -338,20 +339,26 @@ namespace TNCApp_New
                                 
                             
                         }
-                    }
-                    SaveFileDialog saveFileDialog = new SaveFileDialog();
-                    saveFileDialog.ShowDialog();
-                    var filePath = saveFileDialog.FileName;
-                    File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
-                    this.UploadingBar.Value = 100;
-                    this.richTextBox1.Text = ("Done");
-                    div = new DataVisualization(dict);
+                        SaveFileDialog saveFileDialog = new SaveFileDialog();
+                        saveFileDialog.ShowDialog();
+                        var filePath = saveFileDialog.FileName;
+                        if(!File.Exists(filePath))
+                        {
+                            this.richTextBox1.Text = ("folder path not valid");
+                            return;
+                        }
+                        File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
+                        this.UploadingBar.Value = 100;
+                        this.richTextBox1.Text = ("Done");
+                        div = new DataVisualization(dict);
 
-                    // Configure the dialog box
-                    div.Owner = this;
-                    // Open the dialog box modally 
-                    div.ShowDialog();
-                    return;
+                        // Configure the dialog box
+                        div.Owner = this;
+                        // Open the dialog box modally 
+                        div.Show();
+                        return;
+                    }
+
                 default:this.richTextBox1.Text=("input not valid");
                     return;
             }
@@ -362,47 +369,6 @@ namespace TNCApp_New
 
         }
 
-        async void OnlineProcess()
-        {
-            try
-            {
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.ShowDialog(); 
-
-                // 1. upload image
-                string imagePath = openFileDialog.FileName;
-
-                this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
-
-                AnimalImage image = await UploadImage(imagePath);
-                //this.richTextBox1.Text = image.UploadBlobSASUrl;
-
-                // 2. image classification
-                string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
-                this.richTextBox1.Text = ("Waiting for prediction result...");
-                var preResult = await MakePredictionRequestCNTK(imageUrl);
-                this.UploadingBar.Value += 33;
-                this.richTextBox1.Clear();
-                List<String> items = new List<String>();
-                var sorted = preResult.Predictions.OrderByDescending(f => f.Probability);
-                foreach (var pre in sorted)
-                {
-                    // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
-                    items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
-
-
-                }
-                this.ListV.ItemsSource = items;
-                this.richTextBox1.Text = "Done Uploading";
-
-            }
-            catch (Exception ex)
-            {
-                //this.ListV.Items.Clear();
-                //this.ListV.Items.Add(ex.ToString());
-                throw ex;
-            }
-        }
         private  void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
             LocalProcess();                
