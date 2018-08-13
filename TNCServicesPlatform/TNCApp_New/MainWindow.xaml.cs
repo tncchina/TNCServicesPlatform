@@ -29,6 +29,7 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using TNCAnimalLabelWebAPI;
 using TNCAnimalLabelWebAPI.Models;
 using TNCApp_New.CNTK;
+using TNCApp_New.Models;
 
 namespace TNCApp_New
 {
@@ -139,22 +140,23 @@ namespace TNCApp_New
             this.pictureBox1.Source = new BitmapImage();
 
         }
+        //start the entier prediction process
+        //turn to different operation based on different file type loaded
 
-
-
-        async void LocalProcess()
+        async void StartPrediction()
         {
-
-
             this.ListV.ItemsSource = new List<String>();
             this.UploadingBar.Value = 0;
             this.richTextBox1.Clear();
             this.pictureBox1.Source = new BitmapImage();
+
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Multiselect = true;
             openFileDialog.ShowDialog();
             var csv = new StringBuilder();
+
             IDictionary<string, int> dict = new Dictionary<string, int>();
+
             switch (Path.GetExtension(openFileDialog.FileName))
             {
                 case ".jpg":
@@ -166,17 +168,17 @@ namespace TNCApp_New
                     var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
                     Window1 dlg = new Window1();
 
+                    //Ask for camera information
                     // Configure the dialog box
                     dlg.Owner = this;
                     // Open the dialog box modally 
                     dlg.ShowDialog();
                     dlg.Top = this.Top + 20;
-                    //this.PopUpBar.Visibility = Visibility.Visible;
                     string cameraNumber= dlg.CameraNumber.Text;
                     string folderName= dlg.CameraLocation.Text;
                     string positionNumber= dlg.CameraLocation.Text;
                     int workDays =1 ;
-                    var Last_WorkDay = File.GetCreationTime(imagePaths[0]).Date;
+                    var lastWorkDay = File.GetCreationTime(imagePaths[0]).Date;
                     csv.AppendLine(newLine);
                     int i = 0;
                     ImagePredictionResultModel result;
@@ -184,6 +186,7 @@ namespace TNCApp_New
                     string folderPath = Path.GetDirectoryName(imagePaths[0]);
                     string pathString = System.IO.Path.Combine(folderPath, folderName);
                     System.IO.Directory.CreateDirectory(pathString);
+                    var ConfirmPredictions = new List<ConfirmPredictionModel>();
                     
                     foreach (String imagePath in imagePaths)
                     {
@@ -192,7 +195,7 @@ namespace TNCApp_New
                         var shootingTime = File.GetCreationTime(imagePath).ToShortTimeString();
                         var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
                         var fileExt = Path.GetExtension(imagePath);
-                         workDays += (shootingDate - Last_WorkDay).Days;
+                         workDays += (shootingDate - lastWorkDay).Days;
                         if (this.StateLocal != true)
                         {
                             AnimalImage image = await UploadImage(imagePath);
@@ -206,6 +209,11 @@ namespace TNCApp_New
                         {
                              result = LocalPrediction.EvaluateCustomDNN(imagePath);
                         }
+                        ConfirmPredictions.Add(new ConfirmPredictionModel()
+                        {
+                            FilePath = imagePath,
+                            Predictions = result.Predictions
+                        });
                         var sorted = result.Predictions.OrderByDescending(f => f.Probability);
                         this.ListV.ItemsSource = new List<String>();
                         items = new List<string>();
@@ -266,10 +274,6 @@ namespace TNCApp_New
                     double ss;
                     var imagePath1 = openFileDialog.FileName;
                     this.richTextBox1.Text = ("Processing...");
-                    
-                    using (var reader = new StreamReader(imagePath1, Encoding.Default))
-                    {
-
                         var file = new StreamReader(imagePath1, Encoding.Default).ReadToEnd(); 
                         var lines = file.Split('\n');
                         var count = lines.Count();
@@ -285,18 +289,20 @@ namespace TNCApp_New
                                 continue;
                             }
                             var values = line.Split(',');
+                            //check if the row is a valid row, if not continue
                             if (values.Count() < 2){
                                 continue;
                             }
-                            var FileName = values[0];
-                            var FolderName = values[3];
+
+                            var fileName = values[0];
+                            var folderNames = values[3];
                             var extension = values[2];
                             if (extension != "JPG")
                             {
                                  csv.AppendLine(line);
                                 continue;
                             }
-                            var NewPath = Path.GetDirectoryName(imagePath1) + $"\\{FolderName}\\{FileName}.{extension}";
+                            var NewPath = Path.GetDirectoryName(imagePath1) + $"\\{folderNames}\\{fileName}.{extension}";
                             if (!File.Exists(NewPath)) continue;
                             if (this.StateLocal != true)
                             {
@@ -357,7 +363,6 @@ namespace TNCApp_New
                         // Open the dialog box modally 
                         div.Show();
                         return;
-                    }
 
                 default:this.richTextBox1.Text=("input not valid");
                     return;
@@ -366,12 +371,94 @@ namespace TNCApp_New
 
 
 
+        }
+        private void GenerateCSV(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models)
+        {
+            int i = 0;
+            int workDays = 1;
 
+            var lastWorkDay = File.GetCreationTime(models[0].FilePath).Date;
+            IDictionary<string, int> dict = new Dictionary<string, int>();
+            var csv = new StringBuilder();
+            List<String> items = new List<String>();
+            var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+            csv.AppendLine(newLine);
+            string folderPath = Path.GetDirectoryName(models[0].FilePath);
+            string pathString = System.IO.Path.Combine(folderPath, cameraLocation);
+            System.IO.Directory.CreateDirectory(pathString);
+            string speciesName = "";
+            var lastPhotoSpecie = speciesName;
+            foreach (var model in models)
+            {
+
+                var imagePath = model.FilePath;
+                Bitmap bmp = new Bitmap(imagePath);
+                var shootingDate = File.GetCreationTime(imagePath).Date;
+                var shootingTime = File.GetCreationTime(imagePath).ToShortTimeString();
+                var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
+                var fileExt = Path.GetExtension(imagePath);
+                workDays += (shootingDate - lastWorkDay).Days;
+                var sorted = model.Predictions.OrderByDescending(f => f.Probability);
+                //this is the part for the threshhold
+                if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < 90)
+                {
+                    //do something to the window
+                    this.ListV.ItemsSource = new List<String>();
+                    items = new List<string>();
+                    foreach (var pre in sorted)
+                    {
+                        // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                        items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+
+                    }
+
+                }
+                speciesName = sorted.ToList<Prediction>()[0].Tag;
+                var firstDetected = (speciesName == lastPhotoSpecie) ? "YES" : "NO";
+                lastPhotoSpecie = speciesName;
+                newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
+                    $"{cameraLocation}-{i.ToString("D4")}",
+                    fileNameNoext,
+                    fileExt,
+                    cameraLocation,
+                    cameraNumber,
+                    cameraLocation,
+                    shootingDate,
+                    shootingTime,
+                    workDays,
+                    "Unkown Type",
+                    speciesName,
+                    "Unknown number of animal",
+                    "Unknown gender",
+                    firstDetected,
+                    "NAN"
+                );
+                if (dict.ContainsKey(speciesName))
+                {
+                    dict[speciesName]++;
+                }
+                else
+                {
+                    dict.Add(speciesName, 1);
+                }
+                csv.AppendLine(newLine);
+                bmp.Save($"{Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
+                i++;
+            }
+            File.WriteAllText(Path.Combine(pathString, $"{cameraLocation}.csv"), csv.ToString(), Encoding.Default);
+            this.UploadingBar.Value = 100;
+            this.richTextBox1.Text = ("Done");
+            DataVisualization div = new DataVisualization(dict);
+            // Configure the dialog box
+            div.Owner = this;
+            // Open the dialog box modally 
+            div.Show();
+            return;
         }
 
         private  void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
-            LocalProcess();                
+            StartPrediction();                
 
            
         }
