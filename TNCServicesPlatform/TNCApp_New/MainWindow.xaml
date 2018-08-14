@@ -310,7 +310,7 @@
 
                 <Image x:Name="pictureBox1" HorizontalAlignment="Left" Height="368" VerticalAlignment="Top" Width="560" Margin="-1,-9,0,0" Grid.RowSpan="2"/>
                 <TextBox x:Name="richTextBox1" HorizontalAlignment="Left" Height="215" Margin="0,101,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" FontSize="36" FontFamily="Century Gothic" Background="{x:Null}" Grid.ColumnSpan="5" BorderBrush="{x:Null}" Grid.Row="1" Foreground="White" SelectionBrush="{x:Null}"/>
-                <ListBox x:Name="ListV" HorizontalAlignment="Left" Height="374" Margin="1,0,0,0" VerticalAlignment="Top" Width="271" Grid.ColumnSpan="4" Grid.Column="1" Grid.RowSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White" FontFamily="ListV" FontSize="18" ScrollViewer.VerticalScrollBarVisibility="Disabled"/>
+                <ListBox x:Name="ListV" HorizontalAlignment="Left" Height="374" Margin="1,0,0,0" VerticalAlignment="Top" Width="271" Grid.ColumnSpan="4" Grid.Column="1" Grid.RowSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White" FontFamily="ListV" FontSize="18" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseLeftButtonDown="ListV_MouseLeftButtonDown" PreviewMouseLeftButtonDown="ListV_PreviewMouseLeftButtonDown"/>
                 <TextBox x:Name="TextLineBox" HorizontalAlignment="Left" Height="24" Margin="-107,10,0,0" TextWrapping="Wrap" Text="Offline" VerticalAlignment="Top" Width="120" TextChanged="TextBox_TextChanged" Grid.Row="1" FontSize="16" Background="{x:Null}" Foreground="White" BorderBrush="{x:Null}" FontFamily="Century Gothic" SelectionBrush="{x:Null}"/>
             </Grid>
             <Grid HorizontalAlignment="Left" Height="646" VerticalAlignment="Top" Width="129" Margin="10,0,0,0">
