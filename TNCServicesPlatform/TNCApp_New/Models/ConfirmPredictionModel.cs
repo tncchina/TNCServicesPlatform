@@ -6,6 +6,8 @@ using System.Linq;
 using System.Security.RightsManagement;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media.Imaging;
 using TNCAnimalLabelWebAPI.Models;
 
 namespace TNCApp_New.Models
@@ -29,8 +31,10 @@ namespace TNCApp_New.Models
         //public string NewFolderPath { get; set; }
 
         public List<Prediction> Predictions { get; set; }
+        public int CSVindex { get; set; }
 
-      
+
+
     }
 
 }

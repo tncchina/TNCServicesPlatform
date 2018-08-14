@@ -152,11 +152,14 @@ namespace TNCApp_New
             this.UploadingBar.Value = 0;
             this.richTextBox1.Clear();
             this.pictureBox1.Source = new BitmapImage();
+            this.ConfirmButton.Visibility = Visibility.Hidden;
+            this.ConfirmTextBox.Visibility = Visibility.Hidden;
 
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Multiselect = true;
             openFileDialog.ShowDialog();
             var csv = new StringBuilder();
+            var ConfirmPredictions = new List<ConfirmPredictionModel>();
 
             IDictionary<string, int> dict = new Dictionary<string, int>();
 
@@ -184,7 +187,7 @@ namespace TNCApp_New
                     int i = 0;
                     ImagePredictionResultModel result;
                     List<String> items = new List<String>();
-                    var ConfirmPredictions = new List<ConfirmPredictionModel>();
+
                     
                     foreach (String imagePath in imagePaths)
                     {
@@ -235,8 +238,6 @@ namespace TNCApp_New
 
                             if (j == 0)
                             {
-                                line = line.Replace("\r", ",预测种类1,预测概率1,预测种类2,预测概率2,预测种类3,预测概率3" + "\r");
-                                csv.AppendLine(line);
                                 continue;
                             }
                             var values = line.Split(',');
@@ -250,7 +251,6 @@ namespace TNCApp_New
                             var extension = values[2];
                             if (extension != "JPG")
                             {
-                                 csv.AppendLine(line);
                                 continue;
                             }
                             var NewPath = Path.GetDirectoryName(imagePath1) + $"\\{folderNames}\\{fileName}.{extension}";
@@ -268,51 +268,19 @@ namespace TNCApp_New
                             {
                                 result = LocalPrediction.EvaluateCustomDNN(NewPath);
                             }
-                            var sorted = result.Predictions.OrderByDescending(f => f.Probability);
-                            this.ListV.ItemsSource = new List<String>();
-                            items = new List<string>();
-                            foreach (var pre in sorted)
-                            {
-                                // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
-                                items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
-
-                            }
-                            this.ListV.ItemsSource = items;
                             this.pictureBox1.Source = new BitmapImage(new Uri(NewPath, UriKind.RelativeOrAbsolute));
                             ss = j;
                             this.UploadingBar.Value = Math.Round(ss / N_count * 100);
                             AllowUIToUpdate();
-                            var predictions = sorted.ToList<Prediction>();
-                            line = line.Replace("\r", $",{predictions[0].Tag},{predictions[0].Probability},{predictions[1].Tag},{predictions[1].Probability},{predictions[2].Tag},{predictions[2].Probability}," + "\r");
-                            csv.AppendLine(line);
-                            if (dict.ContainsKey(sorted.ToList<Prediction>()[0].Tag))
-                            {
-                                dict[sorted.ToList<Prediction>()[0].Tag]++;
-                            }
-                            else
-                            {
-                                dict.Add(sorted.ToList<Prediction>()[0].Tag, 1);
-                            }
-                                
-                            
-                        }
-                        SaveFileDialog saveFileDialog = new SaveFileDialog();
-                        saveFileDialog.ShowDialog();
-                        var filePath = saveFileDialog.FileName;
-                        if(!File.Exists(filePath))
+                        ConfirmPredictions.Add(new ConfirmPredictionModel()
                         {
-                            this.richTextBox1.Text = ("folder path not valid");
-                            return;
+                            FilePath = NewPath,
+                            Predictions = result.Predictions,
+                            CSVindex = j
+                        });  
                         }
-                        File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
-                        this.UploadingBar.Value = 100;
-                        this.richTextBox1.Text = ("Done");
-                        DataVisualization div = new DataVisualization(dict);
 
-                        // Configure the dialog box
-                        div.Owner = this;
-                        // Open the dialog box modally 
-                        div.Show();
+                    Task mytask1 = Task.Run(() => { GenerateCSV_CSV(lines, ConfirmPredictions); });
                         return;
 
                 default:this.richTextBox1.Text=("input not valid");
@@ -353,6 +321,7 @@ namespace TNCApp_New
                 var sorted = model.Predictions.OrderByDescending(f => f.Probability);
                 //this is the part for the threshhold
                 int CorrectedIndex = 0;
+                speciesName = sorted.ToList()[0].Tag;
                 if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate)
                 {
 
@@ -371,17 +340,30 @@ namespace TNCApp_New
                         //do something to the window
                         this.ListV.ItemsSource = new List<String>();
                         this.ListV.ItemsSource = items;
+                        this.ConfirmButton.Visibility = Visibility.Visible;
+                        this.ConfirmTextBox.Visibility = Visibility.Visible;
                     });
 
                     //AllowUIToUpdate();
                     mre.WaitOne();
                     mre.Reset();
                     
-                    
-                    this.Dispatcher.Invoke(() => { CorrectedIndex = this.ListV.SelectedIndex; });
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        if (this.ListV.SelectedIndex != -1)
+                        {
+                            CorrectedIndex = this.ListV.SelectedIndex;
+                            speciesName = sorted.ToList<Prediction>()[CorrectedIndex].Tag;
+                        }
+                        else
+                        {
+                            speciesName = ConfirmTextBox.Text;
+                        }
+                        
+                    });
 
                 }
-                speciesName = sorted.ToList<Prediction>()[CorrectedIndex].Tag;
+                
                 var firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
                 lastPhotoSpecie = speciesName;
                 newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
@@ -417,8 +399,114 @@ namespace TNCApp_New
             this.Dispatcher.Invoke(() => {
                 this.UploadingBar.Value = 100;
                 this.richTextBox1.Text = ("Done");
-
+                this.ConfirmButton.Visibility = Visibility.Hidden;
+                this.ConfirmTextBox.Visibility = Visibility.Hidden;
                 DataVisualization div = new DataVisualization(dict);
+                // Configure the dialog box
+                div.Owner = this;
+                // Open the dialog box modally 
+                div.Show();
+            });
+
+
+            return;
+        }
+        private void GenerateCSV_CSV(string[] csvstrings, List<ConfirmPredictionModel> models)
+        {
+
+            var lastWorkDay = File.GetCreationTime(models[0].FilePath).Date;
+            IDictionary<string, int> dict = new Dictionary<string, int>();
+            var csv = new StringBuilder();
+            List<String> items = new List<String>();
+            var line = csvstrings[0];
+            csvstrings[0] = csvstrings[0].Replace("\r", "对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+            string speciesName = "";
+            var lastPhotoSpecie = speciesName;
+            foreach (var model in models)
+            {
+
+                var imagePath = model.FilePath;
+                Bitmap bmp = new Bitmap(imagePath);
+                var sorted = model.Predictions.OrderByDescending(f => f.Probability);
+
+                //this is the part for the threshhold
+                int CorrectedIndex = 0;
+                speciesName = sorted.ToList()[0].Tag;
+                if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate)
+                {
+
+                    items = new List<string>();
+                    foreach (var pre in sorted)
+                    {
+                        // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                        items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+
+                    }
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        this.pictureBox1.Source = new BitmapImage(new Uri(imagePath));
+                        this.richTextBox1.Text =
+                            "please reconfirm the Animal that below confidence rate " + $"{ConfidenceRate}%";
+                        //do something to the window
+                        this.ListV.ItemsSource = new List<String>();
+                        this.ListV.ItemsSource = items;
+                        this.ConfirmButton.Visibility = Visibility.Visible;
+                        this.ConfirmTextBox.Visibility = Visibility.Visible;
+                    });
+
+                    //AllowUIToUpdate();
+                    mre.WaitOne();
+                    mre.Reset();
+
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        if (this.ListV.SelectedIndex != -1)
+                        {
+                            CorrectedIndex = this.ListV.SelectedIndex;
+                            speciesName = sorted.ToList<Prediction>()[CorrectedIndex].Tag;
+                        }
+                        else
+                        {
+                            speciesName = ConfirmTextBox.Text;
+                        }
+
+                    });
+
+                }
+
+                var firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
+                lastPhotoSpecie = speciesName;
+                csvstrings[model.CSVindex] = csvstrings[model.CSVindex].Replace("\r", string.Format("{0},{1},{2},{3},{4},{5}", "Unkown Type",
+                                                                                          speciesName,
+                                                                                          "Unknown number of animal",
+                                                                                          "Unknown gender",
+                                                                                          firstDetected, "NAN") + "\r");
+                if (dict.ContainsKey(speciesName))
+                {
+                    dict[speciesName]++;
+                }
+                else
+                {
+                    dict.Add(speciesName, 1);
+                }
+
+            }
+
+            this.Dispatcher.Invoke(() =>
+            {
+                SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.ShowDialog();
+                var filePath = saveFileDialog.FileName;
+                if (!File.Exists(filePath))
+                {
+                    this.richTextBox1.Text = ("folder path not valid");
+                    return;
+                }
+                File.WriteAllText(filePath, csvstrings.ToString(), Encoding.Default);
+                this.UploadingBar.Value = 100;
+                this.richTextBox1.Text = ("Done");
+                DataVisualization div = new DataVisualization(dict);
+
                 // Configure the dialog box
                 div.Owner = this;
                 // Open the dialog box modally 
@@ -496,6 +584,11 @@ namespace TNCApp_New
         private void ListV_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             
+            mre.Set();
+        }
+
+        private void ConfirmButton_Click(object sender, RoutedEventArgs e)
+        {
             mre.Set();
         }
     }
