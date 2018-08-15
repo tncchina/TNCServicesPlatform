@@ -12,6 +12,7 @@ using TNCAnimalLabelWebAPI.Models;
 
 namespace TNCApp_New.Models
 {
+    [Serializable]
     class ConfirmPredictionModel
     {
 /*        public string FileName { get; set; }

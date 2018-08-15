@@ -227,10 +227,18 @@ namespace TNCApp_New
                         AllowUIToUpdate();
                         
                     }
-                    Task mytask = Task.Run(() =>
+                    var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                        folderName + ".tncsv");
+                    bool append = false;
+                    using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+                    {
+                        var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                        binaryFormatter.Serialize(stream, new Tuple<string,string,List<ConfirmPredictionModel>>(cameraNumber, folderName,ConfirmPredictions));
+                    }
+/*                    Task mytask = Task.Run(() =>
                     {
                         GenerateCSV(cameraNumber, folderName, ConfirmPredictions);
-                    });
+                    });*/
                     
                     this.UploadingBar.Value = 100;
                     this.richTextBox1.Text = ("Done");
@@ -605,6 +613,35 @@ namespace TNCApp_New
         private void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             mre.Set();
+        }
+
+        private void Confirm_Click(object sender, RoutedEventArgs e)
+        {
+            List<string> confirmList = new List<string>();
+           DirectoryInfo d = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+            
+            foreach (var textfile in d.GetFiles("*.tncsv|*.tnc"))
+            {
+                confirmList.Add(textfile.Name);
+            }
+            ConfirmDIalog Dlg = new ConfirmDIalog(confirmList);
+
+            // Configure the dialog box
+            Dlg.Owner = this;
+            // Open the dialog box modally 
+            Dlg.ShowDialog();
+            var path = Dlg.Path;
+            using (Stream stream = File.Open(Path.Combine(d.FullName, confirmList[path]), FileMode.Open))
+            {
+                var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                var nice= (Tuple<string,string,List<ConfirmPredictionModel>>)binaryFormatter.Deserialize(stream);
+                var cameraName = nice.Item1;
+                var folderName = nice.Item2;
+                var confirmPredictions = nice.Item3;
+                Task mytask1 = Task.Run(() => { GenerateCSV(cameraName, folderName, confirmPredictions); });
+            }
+           
+           
         }
     }
 }

@@ -1,0 +1,14 @@
+﻿<Window x:Class="TNCApp_New.ConfirmDIalog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TNCApp_New"
+        mc:Ignorable="d"
+        Title="ConfirmDIalog" Height="245.714" Width="467.143">
+    <Grid Margin="0,0,5,1">
+        <ListBox x:Name="ConfrimList" HorizontalAlignment="Left" Width="466" Margin="0,0,-9,0" Height="152" VerticalAlignment="Top" SelectionChanged="ConfrimList_SelectionChanged"/>
+        <Button Name="ConfirmB" Content="Confirm" HorizontalAlignment="Left" Height="60" Margin="0,157,-9,0" VerticalAlignment="Top" Width="466" FontSize="20" Click="ConfirmB_Click_1"/>
+
+    </Grid>
+</Window>

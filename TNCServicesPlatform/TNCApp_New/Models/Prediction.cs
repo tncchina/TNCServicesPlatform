@@ -5,6 +5,7 @@ using System.Web;
 
 namespace TNCAnimalLabelWebAPI.Models
 {
+    [Serializable]
     public class Prediction
     {
         public string TagId { get; set; }
