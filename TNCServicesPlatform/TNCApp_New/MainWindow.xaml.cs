@@ -30,6 +30,7 @@ using TNCAnimalLabelWebAPI;
 using TNCAnimalLabelWebAPI.Models;
 using TNCApp_New.CNTK;
 using TNCApp_New.Models;
+using Image = System.Drawing.Image;
 using ListBox = System.Windows.Controls.ListBox;
 
 namespace TNCApp_New
@@ -564,7 +565,7 @@ namespace TNCApp_New
         {
 
             
-            StartPrediction();
+            StartPrediction1();
 
         }
 
@@ -663,7 +664,7 @@ namespace TNCApp_New
                         var cameraName = nice.Item1;
                         var folderName = nice.Item2;
                         var confirmPredictions = nice.Item3;
-                        Task mytask1 = Task.Run(() => { GenerateCSV(cameraName, folderName, confirmPredictions); });
+                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions); });
                     }
 
                     break;
@@ -713,5 +714,301 @@ namespace TNCApp_New
                 div.Show();
             }
         }
+
+        async void StartPrediction1()
+        {
+            this.ListV.ItemsSource = new List<String>();
+            this.UploadingBar.Value = 0;
+            this.richTextBox1.Clear();
+            this.pictureBox1.Source = new BitmapImage();
+            this.ConfirmButton.Visibility = Visibility.Hidden;
+            this.ConfirmTextBox.Visibility = Visibility.Hidden;
+
+            List<string> fileorflolder = new List<string>();
+            fileorflolder.Add("process file");
+            fileorflolder.Add("process all csv in folder");
+            fileorflolder.Add("process all photos in foler");
+            ConfirmDIalog conDlg = new ConfirmDIalog(fileorflolder);
+
+            // Configure the dialog box
+            conDlg.Owner = this;
+            // Open the dialog box modally 
+            conDlg.ShowDialog();
+            int index = conDlg.Path;
+            if (index == 0 )
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Multiselect = true;
+                openFileDialog.ShowDialog();
+                var csv = new StringBuilder();
+                var ConfirmPredictions = new List<ConfirmPredictionModel>();
+                IDictionary<string, int> dict = new Dictionary<string, int>();
+                this.richTextBox1.Text = ("Processing...");
+                AllowUIToUpdate();
+                string cameraNumber;
+                string folderName;
+                string positionNumber ;
+                List<string> imagePaths = new List<string>();
+                //csv.AppendLine(newLine);
+                double i = 0;
+                ImagePredictionResultModel result;
+                List<String> items = new List<String>();
+                int totalFilesNum = 0;
+                if (!File.Exists(openFileDialog.FileName))
+                {
+                    this.richTextBox1.Text = "invlid file chosen";
+                    return;
+                }
+                if (Path.GetExtension(openFileDialog.FileName)==".jpg"|| Path.GetExtension(openFileDialog.FileName) == ".JPG")
+                {
+                    Window1 dlg = new Window1();
+                    //Ask for camera information
+                    // Configure the dialog box
+                    dlg.Owner = this;
+                    // Open the dialog box modally 
+                    dlg.ShowDialog();
+                    dlg.Top = this.Top + 20;
+                    cameraNumber = dlg.CameraNumber.Text;
+                    folderName = dlg.CameraLocation.Text;
+                    positionNumber = dlg.CameraLocation.Text;
+                    imagePaths = new List<string>(openFileDialog.FileNames);
+                    totalFilesNum = imagePaths.Count;
+                }
+
+                else if (Path.GetExtension(openFileDialog.FileName) == ".csv")
+                {
+                    var file = new StreamReader(openFileDialog.FileName, Encoding.Default).ReadToEnd();
+                    var lines = file.Split('\n');
+                    var values = lines[1].Split(',');
+                    positionNumber = values[3];
+                    cameraNumber = values[4];
+                    int j = 0;
+                    var imagepath = openFileDialog.FileName;
+                    foreach (var line in lines)
+                    {
+                        if (j == 0|| line == "")
+                        {
+                            j++;
+                            continue;
+                        }
+
+                        values = line.Split(',');
+                        var fileName = values[0];
+                        var extension = values[2];
+                        //assume the file is in a location
+                        imagePaths.Add(Path.GetDirectoryName(imagepath) + $"\\{positionNumber}\\{fileName}.{extension}");
+                        j++;
+                    }
+
+                    totalFilesNum = imagePaths.Count;
+                    ;
+                }
+                else
+                {
+                    positionNumber = "";
+                    cameraNumber = "";
+                }
+
+                
+                foreach (String imagePath in imagePaths)
+                {
+                    if (!File.Exists(imagePath))
+                    {
+                        
+                    }
+                    else if (Path.GetExtension(imagePath) == ".jpg" || Path.GetExtension(imagePath) == ".JPG")
+                    {
+                        this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
+                        if (this.StateLocal != true)
+                        {
+                            AnimalImage image = await UploadImage(imagePath);
+                            //this.richTextBox1.Text = image.UploadBlobSASUrl;
+                            // 2. image classification
+                            string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
+                            this.richTextBox1.Text = ("Waiting for prediction result...");
+                            result = await MakePredictionRequestCNTK(imageUrl);
+                        }
+                        else
+                        {
+                            result = LocalPrediction.EvaluateCustomDNN(imagePath, modelFunc);
+                        }
+                        ConfirmPredictions.Add(new ConfirmPredictionModel()
+                        {
+                            IsPhoto = true,
+                            FilePath = imagePath,
+                            Predictions = result.Predictions
+                        });
+                    }
+                    else
+                    {
+                        ConfirmPredictions.Add(new ConfirmPredictionModel()
+                        {
+                            IsPhoto = false,
+                            FilePath = imagePath
+                        });
+                    }
+
+                    i++;
+                    this.UploadingBar.Value = Math.Round(i/ (totalFilesNum) * 100);
+                    AllowUIToUpdate();
+
+                }
+                var path = Path.Combine(ConfirmFolder, positionNumber + ".tnc");
+                bool append = false;
+                using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+                {
+                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    binaryFormatter.Serialize(stream, new Tuple<string, string, List<ConfirmPredictionModel>>(cameraNumber, positionNumber, ConfirmPredictions));
+                }
+
+                this.UploadingBar.Value = 100;
+                this.richTextBox1.Text = ("Done");
+                return;
+
+            }
+
+      
+
+
+        }
+        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models)
+        {
+            int i = 0;
+            int workDays = 1;
+
+            var lastWorkDay = File.GetCreationTime(models[0].FilePath).Date;
+            IDictionary<string, int> dict = new Dictionary<string, int>();
+            var csv = new StringBuilder();
+            List<String> items = new List<String>();
+            var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+            csv.AppendLine(newLine);
+            string folderPath = Path.GetDirectoryName(models[0].FilePath);
+            string pathString = System.IO.Path.Combine(folderPath, cameraLocation);
+            System.IO.Directory.CreateDirectory(pathString);
+            string speciesName = "";
+            var lastPhotoSpecie = speciesName;
+            string firstDetected = "";
+            string speciesNamef = "";
+            foreach (var model in models)
+            {
+
+                var imagePath = model.FilePath;
+                if (!File.Exists(imagePath))
+                {
+                    continue;
+                }
+                var shootingDate = File.GetCreationTime(imagePath).Date;
+                var shootingTime = File.GetCreationTime(imagePath).ToShortTimeString();
+                var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
+                var fileExt = Path.GetExtension(imagePath);
+                workDays += (shootingDate - lastWorkDay).Days;
+                if (model.IsPhoto == true)
+                {
+                    Bitmap bmp = new Bitmap(imagePath);
+                    bmp.Save($"{Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
+                    var sorted = model.Predictions.OrderByDescending(f => f.Probability);
+                    //this is the part for the threshhold
+                    int CorrectedIndex = 0;
+                    speciesName = sorted.ToList()[0].Tag;
+                    if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate)
+                    {
+
+                        items = new List<string>();
+                        foreach (var pre in sorted)
+                        {
+                            // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
+                            items.Add(pre.Tag + ":  " + Math.Round(pre.Probability * 100, 6) + "%\n");
+
+                        }
+                        this.Dispatcher.Invoke(() =>
+                        {
+                            this.pictureBox1.Source = new BitmapImage(new Uri(imagePath));
+                            this.richTextBox1.Text =
+                                "please reconfirm the Animal that below confidence rate " + $"{ConfidenceRate}%";
+                            //do something to the window
+                            this.ListV.ItemsSource = new List<String>();
+                            this.ListV.ItemsSource = items;
+                            this.ConfirmButton.Visibility = Visibility.Visible;
+                            this.ConfirmTextBox.Visibility = Visibility.Visible;
+                        });
+
+                        //AllowUIToUpdate();
+                        mre.WaitOne();
+                        mre.Reset();
+
+                        this.Dispatcher.Invoke(() =>
+                        {
+                            if (this.ListV.SelectedIndex != -1)
+                            {
+                                CorrectedIndex = this.ListV.SelectedIndex;
+                                speciesName = sorted.ToList<Prediction>()[CorrectedIndex].Tag;
+                            }
+                            else
+                            {
+                                speciesName = ConfirmTextBox.Text;
+                            }
+
+                        });
+
+                    }
+                    firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
+                    lastPhotoSpecie = speciesName;
+                    speciesNamef = speciesName;
+                }
+                else
+                {
+                    speciesNamef = "";
+                    firstDetected = "";
+                }
+
+                newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
+                    $"{cameraLocation}-{i.ToString("D4")}",
+                    fileNameNoext,
+                    fileExt,
+                    cameraLocation,
+                    cameraNumber,
+                    cameraLocation,
+                    shootingDate,
+                    shootingTime,
+                    workDays,
+                    "Unkown Type",
+                    speciesNamef,
+                    "Unknown number of animal",
+                    "Unknown gender",
+                    firstDetected,
+                    "NAN"
+                );
+                if (dict.ContainsKey(speciesName))
+                {
+                    dict[speciesName]++;
+                }
+                else
+                {
+                    dict.Add(speciesName, 1);
+                }
+                csv.AppendLine(newLine);
+                
+                i++;
+            }
+            File.WriteAllText(Path.Combine(pathString, $"{cameraLocation}.csv"), csv.ToString(), Encoding.Default);
+            this.Dispatcher.Invoke(() => {
+                this.UploadingBar.Value = 100;
+                this.richTextBox1.Text = ("Done");
+                this.ConfirmButton.Visibility = Visibility.Hidden;
+                this.ConfirmTextBox.Visibility = Visibility.Hidden;
+                var path = Path.Combine(DataVisFolder, cameraLocation + ".data");
+                var append = false;
+                using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+                {
+                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    binaryFormatter.Serialize(stream, dict);
+                }
+
+            });
+
+
+            return;
+        }
+
     }
 }
