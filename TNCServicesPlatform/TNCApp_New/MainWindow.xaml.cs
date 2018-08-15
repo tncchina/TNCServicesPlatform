@@ -42,6 +42,9 @@ namespace TNCApp_New
         private static ManualResetEvent mre = new ManualResetEvent(false);
         public bool StateLocal { get; set; }
         public int ConfidenceRate { get; set; }
+        public string RootFolder { get; set; }
+        public string ConfirmFolder { get; set; }
+        public string DataVisFolder { get; set; }
         Function modelFunc { get; set; }
 
         public MainWindow()
@@ -59,6 +62,11 @@ namespace TNCApp_New
             }
             DeviceDescriptor device = DeviceDescriptor.CPUDevice;
             modelFunc = Function.Load(modelFilePath, device);
+            RootFolder= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TNC");
+            ConfirmFolder = Path.Combine(RootFolder, "confirm");
+            DataVisFolder = Path.Combine(RootFolder, "datavis");
+            System.IO.Directory.CreateDirectory(ConfirmFolder);
+            System.IO.Directory.CreateDirectory(DataVisFolder);
 
         }
 
@@ -226,9 +234,8 @@ namespace TNCApp_New
                         this.UploadingBar.Value += Math.Round(1.0 / totalFilesNum * 100);
                         AllowUIToUpdate();
                         
-                    }
-                    var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                        folderName + ".tncsv");
+                    }                   
+                    var path = Path.Combine(ConfirmFolder, folderName + "jpg_csv.tnc");
                     bool append = false;
                     using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
                     {
@@ -252,6 +259,7 @@ namespace TNCApp_New
                         var lines = file.Split('\n');
                         var count = lines.Count();
                         var N_count = count;
+                    string folderNames = "null";
                         for (int j = 0; j<count;j++)
                         {
                             var line = lines[j];
@@ -267,7 +275,7 @@ namespace TNCApp_New
                             }
 
                             var fileName = values[0];
-                            var folderNames = values[3];
+                             folderNames = values[3];
                             var extension = values[2];
                             if (extension != "JPG")
                             {
@@ -299,9 +307,18 @@ namespace TNCApp_New
                             CSVindex = j
                         });  
                         }
-
-                    Task mytask1 = Task.Run(() => { GenerateCSV_CSV(lines, ConfirmPredictions); });
-                        return;
+                    path = Path.Combine(ConfirmFolder,
+                         folderNames + "csv_csv.tnsv");
+                    append = false;
+                    using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+                    {
+                        var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                        binaryFormatter.Serialize(stream, new Tuple<string[], List<ConfirmPredictionModel>,string>(lines, ConfirmPredictions,folderNames));
+                    }
+                    this.UploadingBar.Value = 100;
+                    this.richTextBox1.Text = ("Done");
+                    // Task mytask1 = Task.Run(() => { GenerateCSV_CSV(lines, ConfirmPredictions); });
+                    return;
 
                 default:this.richTextBox1.Text=("input not valid");
                     return;
@@ -421,17 +438,20 @@ namespace TNCApp_New
                 this.richTextBox1.Text = ("Done");
                 this.ConfirmButton.Visibility = Visibility.Hidden;
                 this.ConfirmTextBox.Visibility = Visibility.Hidden;
-                DataVisualization div = new DataVisualization(dict);
-                // Configure the dialog box
-                div.Owner = this;
-                // Open the dialog box modally 
-                div.Show();
+                var path = Path.Combine(DataVisFolder, cameraLocation +".data");
+                var append = false;
+                using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+                {
+                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    binaryFormatter.Serialize(stream, dict);
+                }
+
             });
 
 
             return;
         }
-        private void GenerateCSV_CSV(string[] csvstrings, List<ConfirmPredictionModel> models)
+        private void GenerateCSV_CSV(string[] csvstrings, List<ConfirmPredictionModel> models,string csvName)
         {
 
             var lastWorkDay = File.GetCreationTime(models[0].FilePath).Date;
@@ -518,9 +538,10 @@ namespace TNCApp_New
             {
                 SaveFileDialog saveFileDialog = new SaveFileDialog();
                 saveFileDialog.Filter = "CSV (*.csv)|*.csv";
+                saveFileDialog.FileName = csvName;
                 saveFileDialog.ShowDialog();
                 var filePath = saveFileDialog.FileName;
-                if (!File.Exists(filePath))
+                if (filePath=="")
                 {
                     this.richTextBox1.Text = ("folder path not valid");
                     return;
@@ -528,14 +549,14 @@ namespace TNCApp_New
                 File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
                 this.UploadingBar.Value = 100;
                 this.richTextBox1.Text = ("Done");
-                DataVisualization div = new DataVisualization(dict);
-
-                // Configure the dialog box
-                div.Owner = this;
-                // Open the dialog box modally 
-                div.Show();
             });
-
+            var path = Path.Combine(DataVisFolder, csvName+"new"+".data");
+            var append = false;
+            using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+            {
+                var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                binaryFormatter.Serialize(stream, dict);
+            }
 
             return;
         }
@@ -617,10 +638,10 @@ namespace TNCApp_New
 
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
-            List<string> confirmList = new List<string>();
-           DirectoryInfo d = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Desktop));
+           List<string> confirmList = new List<string>();
+           DirectoryInfo d = new DirectoryInfo(ConfirmFolder);
             
-            foreach (var textfile in d.GetFiles("*.tncsv|*.tnc"))
+            foreach (var textfile in d.GetFiles("*.tnc").Union(d.GetFiles("*.tnsv")).ToArray())
             {
                 confirmList.Add(textfile.Name);
             }
@@ -631,17 +652,66 @@ namespace TNCApp_New
             // Open the dialog box modally 
             Dlg.ShowDialog();
             var path = Dlg.Path;
-            using (Stream stream = File.Open(Path.Combine(d.FullName, confirmList[path]), FileMode.Open))
+            var confirmpath = Path.Combine(ConfirmFolder, confirmList[path]);
+            switch (Path.GetExtension(confirmList[path]))
+            {
+                case".tnc":
+                    using (Stream stream = File.Open(confirmpath, FileMode.Open))
+                    {
+                        var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                        var nice = (Tuple<string, string, List<ConfirmPredictionModel>>)binaryFormatter.Deserialize(stream);
+                        var cameraName = nice.Item1;
+                        var folderName = nice.Item2;
+                        var confirmPredictions = nice.Item3;
+                        Task mytask1 = Task.Run(() => { GenerateCSV(cameraName, folderName, confirmPredictions); });
+                    }
+
+                    break;
+                case".tnsv":
+                    using (Stream stream = File.Open(confirmpath, FileMode.Open))
+                    {
+                        var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                        var nice = (Tuple<string[], List<ConfirmPredictionModel>,string>)binaryFormatter.Deserialize(stream);
+                        var lines = nice.Item1;
+                        var confirmPredictions = nice.Item2;
+                        var folderName = nice.Item3;
+                        Task mytask1 = Task.Run(() => { GenerateCSV_CSV(lines,confirmPredictions, folderName); });
+                    }
+
+                    break;
+
+            }
+
+           
+           
+        }
+
+        private void Reports_Click(object sender, RoutedEventArgs e)
+        {
+            List<string> dataVisList = new List<string>();
+            DirectoryInfo d = new DirectoryInfo(DataVisFolder);
+
+            foreach (var textfile in d.GetFiles("*.data"))
+            {
+                dataVisList.Add(textfile.Name);
+            }
+            ConfirmDIalog Dlg = new ConfirmDIalog(dataVisList);
+            // Configure the dialog box
+            Dlg.Owner = this;
+            // Open the dialog box modally 
+            Dlg.ShowDialog();
+            var path = Dlg.Path;
+            var datavis = Path.Combine(DataVisFolder, dataVisList[path]);
+            using (Stream stream = File.Open(datavis, FileMode.Open))
             {
                 var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                var nice= (Tuple<string,string,List<ConfirmPredictionModel>>)binaryFormatter.Deserialize(stream);
-                var cameraName = nice.Item1;
-                var folderName = nice.Item2;
-                var confirmPredictions = nice.Item3;
-                Task mytask1 = Task.Run(() => { GenerateCSV(cameraName, folderName, confirmPredictions); });
+                var nice = (IDictionary<string,int>)binaryFormatter.Deserialize(stream);
+                DataVisualization div = new DataVisualization(nice);
+                // Configure the dialog box
+                div.Owner = this;
+                // Open the dialog box modally 
+                div.Show();
             }
-           
-           
         }
     }
 }
