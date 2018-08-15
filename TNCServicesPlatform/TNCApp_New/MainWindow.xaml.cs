@@ -42,6 +42,8 @@ namespace TNCApp_New
         private static ManualResetEvent mre = new ManualResetEvent(false);
         public bool StateLocal { get; set; }
         public int ConfidenceRate { get; set; }
+        Function modelFunc { get; set; }
+
         public MainWindow()
         {
             
@@ -49,6 +51,14 @@ namespace TNCApp_New
             this.UploadingBar.Value = 0;
             this.StateLocal = true;
             this.ConfidenceRate = 90;
+            string domainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string modelFilePath = Path.Combine(domainBaseDirectory, @"CNTK\Models\TNC_ResNet18_ImageNet_CNTK.model");
+            if (!File.Exists(modelFilePath))
+            {
+                throw new FileNotFoundException(modelFilePath, string.Format("Error: The model '{0}' does not exist. Please follow instructions in README.md in <CNTK>/Examples/Image/Classification/ResNet to create the model.", modelFilePath));
+            }
+            DeviceDescriptor device = DeviceDescriptor.CPUDevice;
+            modelFunc = Function.Load(modelFilePath, device);
 
         }
 
@@ -141,6 +151,8 @@ namespace TNCApp_New
             this.UploadingBar.Value = 0;
             this.richTextBox1.Clear();
             this.pictureBox1.Source = new BitmapImage();
+            this.ConfirmButton.Visibility = Visibility.Hidden;
+            this.ConfirmTextBox.Visibility = Visibility.Hidden;
 
         }
         //start the entier prediction process
@@ -203,7 +215,7 @@ namespace TNCApp_New
                         }
                         else
                         {
-                             result = LocalPrediction.EvaluateCustomDNN(imagePath);
+                             result = LocalPrediction.EvaluateCustomDNN(imagePath,modelFunc);
                         }
                         ConfirmPredictions.Add(new ConfirmPredictionModel()
                         {
@@ -266,7 +278,7 @@ namespace TNCApp_New
                             }
                             else
                             {
-                                result = LocalPrediction.EvaluateCustomDNN(NewPath);
+                                result = LocalPrediction.EvaluateCustomDNN(NewPath, modelFunc);
                             }
                             this.pictureBox1.Source = new BitmapImage(new Uri(NewPath, UriKind.RelativeOrAbsolute));
                             ss = j;
@@ -419,7 +431,7 @@ namespace TNCApp_New
             var csv = new StringBuilder();
             List<String> items = new List<String>();
             var line = csvstrings[0];
-            csvstrings[0] = csvstrings[0].Replace("\r", "对象类别,物种名称,动物数量,性别,独立探测首张,备注");
+            csvstrings[0] = csvstrings[0].Replace("\r", "对象类别,物种名称,动物数量,性别,独立探测首张,备注，\r");
             string speciesName = "";
             var lastPhotoSpecie = speciesName;
             foreach (var model in models)
@@ -471,7 +483,6 @@ namespace TNCApp_New
                         }
 
                     });
-
                 }
 
                 var firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
@@ -491,10 +502,14 @@ namespace TNCApp_New
                 }
 
             }
-
+            foreach (var linestring in csvstrings)
+            {
+                csv.Append(linestring);
+            }
             this.Dispatcher.Invoke(() =>
             {
                 SaveFileDialog saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Filter = "CSV (*.csv)|*.csv";
                 saveFileDialog.ShowDialog();
                 var filePath = saveFileDialog.FileName;
                 if (!File.Exists(filePath))
@@ -502,7 +517,7 @@ namespace TNCApp_New
                     this.richTextBox1.Text = ("folder path not valid");
                     return;
                 }
-                File.WriteAllText(filePath, csvstrings.ToString(), Encoding.Default);
+                File.WriteAllText(filePath, csv.ToString(), Encoding.Default);
                 this.UploadingBar.Value = 100;
                 this.richTextBox1.Text = ("Done");
                 DataVisualization div = new DataVisualization(dict);
