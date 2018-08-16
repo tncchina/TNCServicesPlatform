@@ -32,7 +32,6 @@ namespace TNCApp_New.Models
         //public string NewFolderPath { get; set; }
         public bool IsPhoto { get; set; }
         public List<Prediction> Predictions { get; set; }
-        public int CSVindex { get; set; }
 
 
 
