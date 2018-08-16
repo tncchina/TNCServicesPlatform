@@ -259,6 +259,10 @@ namespace TNCApp_New
             // Open the dialog box modally 
             Dlg.ShowDialog();
             var path = Dlg.Path;
+            if (confirmList.Count == 0)
+            {
+                return;
+            }
             var confirmpath = Path.Combine(ConfirmFolder, confirmList[path]);
             switch (Path.GetExtension(confirmList[path]))
             {
@@ -297,6 +301,10 @@ namespace TNCApp_New
             // Open the dialog box modally 
             Dlg.ShowDialog();
             var path = Dlg.Path;
+            if (dataVisList.Count == 0)
+            {
+                return;
+            }
             var datavis = Path.Combine(DataVisFolder, dataVisList[path]);
             using (Stream stream = File.Open(datavis, FileMode.Open))
             {
