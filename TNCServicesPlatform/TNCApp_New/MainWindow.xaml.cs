@@ -46,7 +46,10 @@ namespace TNCApp_New
         public string RootFolder { get; set; }
         public string ConfirmFolder { get; set; }
         public string DataVisFolder { get; set; }
+        public string BrowseFolder { get; set; }
         Function modelFunc { get; set; }
+        public string RootProcessFolder { get; set; }
+        public string GenerateFolder { get; set; }
 
         public MainWindow()
         {
@@ -66,8 +69,12 @@ namespace TNCApp_New
             RootFolder= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TNC");
             ConfirmFolder = Path.Combine(RootFolder, "confirm");
             DataVisFolder = Path.Combine(RootFolder, "datavis");
+            BrowseFolder = Path.Combine(RootFolder, "browse");
+            GenerateFolder = Path.Combine(RootFolder, "Generate");
             System.IO.Directory.CreateDirectory(ConfirmFolder);
             System.IO.Directory.CreateDirectory(DataVisFolder);
+            System.IO.Directory.CreateDirectory(BrowseFolder);
+            System.IO.Directory.CreateDirectory(GenerateFolder);
 
         }
 
@@ -243,70 +250,59 @@ namespace TNCApp_New
             mre.Set();
         }
 
-        private void Confirm_Click(object sender, RoutedEventArgs e)
+        void confrim_photos(bool isThreshhold)
         {
-           List<string> confirmList = new List<string>();
-           DirectoryInfo d = new DirectoryInfo(ConfirmFolder);
-            
-            foreach (var textfile in d.GetFiles("*.tnc").Union(d.GetFiles("*.tnsv")).ToArray())
+            OpenFileDialog confirmdlg = new OpenFileDialog();
+            confirmdlg.InitialDirectory = ConfirmFolder;
+            confirmdlg.DefaultExt = ".tnc";
+            confirmdlg.ShowDialog();
+            var confirmpath = confirmdlg.FileName;
+            if (!File.Exists(confirmpath))
             {
-                confirmList.Add(textfile.Name);
-            }
-            ConfirmDIalog Dlg = new ConfirmDIalog(confirmList);
-
-            // Configure the dialog box
-            Dlg.Owner = this;
-            // Open the dialog box modally 
-            Dlg.ShowDialog();
-            var path = Dlg.Path;
-            if (confirmList.Count == 0)
-            {
+                richTextBox1.Text = "not vaild file";
                 return;
             }
-            var confirmpath = Path.Combine(ConfirmFolder, confirmList[path]);
-            switch (Path.GetExtension(confirmList[path]))
+
+            switch (Path.GetExtension(confirmpath))
             {
-                case".tnc":
+                case ".tnc":
                     using (Stream stream = File.Open(confirmpath, FileMode.Open))
                     {
                         var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                        var nice = (Tuple<string, string, List<ConfirmPredictionModel>>)binaryFormatter.Deserialize(stream);
+                        var nice = (Tuple<string, string, List<ConfirmPredictionModel>, string>)binaryFormatter.Deserialize(stream);
                         var cameraName = nice.Item1;
                         var folderName = nice.Item2;
                         var confirmPredictions = nice.Item3;
-                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions); });
+                        var rootdir = nice.Item4;
+                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold); });
                     }
 
                     break;
 
             }
-            File.Delete(confirmList[path]);
+            //File.Move(confirmpath,Path.Combine(BrowseFolder,Path.GetDirectoryName(confirmpath)));
 
-           
-           
+        }
+        private void Confirm_Click(object sender, RoutedEventArgs e)
+        {
+
+            confrim_photos(true);
+
+
         }
 
         private void Reports_Click(object sender, RoutedEventArgs e)
         {
-            List<string> dataVisList = new List<string>();
-            DirectoryInfo d = new DirectoryInfo(DataVisFolder);
-
-            foreach (var textfile in d.GetFiles("*.data"))
+            OpenFileDialog datadlg = new OpenFileDialog();
+            datadlg.InitialDirectory = DataVisFolder;
+            datadlg.DefaultExt = ".data";
+            datadlg.ShowDialog();
+            if (!File.Exists(datadlg.FileName))
             {
-                dataVisList.Add(textfile.Name);
-            }
-            ConfirmDIalog Dlg = new ConfirmDIalog(dataVisList);
-            // Configure the dialog box
-            Dlg.Owner = this;
-            // Open the dialog box modally 
-            Dlg.ShowDialog();
-            var path = Dlg.Path;
-            if (dataVisList.Count == 0)
-            {
+                richTextBox1.Text = "not vaild file";
                 return;
             }
-            var datavis = Path.Combine(DataVisFolder, dataVisList[path]);
-            using (Stream stream = File.Open(datavis, FileMode.Open))
+            using (Stream stream = File.Open(datadlg.FileName, FileMode.Open))
             {
                 var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
                 var nice = (IDictionary<string,int>)binaryFormatter.Deserialize(stream);
@@ -446,18 +442,42 @@ namespace TNCApp_New
                 AllowUIToUpdate();
 
             }
-            var path = Path.Combine(ConfirmFolder, positionNumber + ".tnc");
+
+            var newdir = processDirctory(ConfirmFolder,Pathname, RootProcessFolder);
+            var path = Path.Combine(newdir, positionNumber + ".tnc");
             bool append = false;
             using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
             {
                 var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                binaryFormatter.Serialize(stream, new Tuple<string, string, List<ConfirmPredictionModel>>(cameraNumber, positionNumber, ConfirmPredictions));
+                binaryFormatter.Serialize(stream, new Tuple<string, string, List<ConfirmPredictionModel>,string>(cameraNumber, positionNumber, ConfirmPredictions,RootProcessFolder));
             }
 
             this.UploadingBar.Value = 100;
             this.richTextBox1.Text = ("Done");
             return;
 
+        }
+
+        string processDirctory(string targetfolder,string Pathname,string Rootdir)
+        {
+            List<string> directoryList = new List<string>();
+            string pp = Path.GetDirectoryName(Path.GetDirectoryName(Pathname));
+            string directoryName = Path.GetFileName(pp);
+            while (Rootdir != directoryName)
+            {
+                pp = Path.GetDirectoryName(pp);
+                directoryList.Add(directoryName);
+                directoryName = Path.GetFileName(pp);
+            }
+            directoryList.Add(directoryName);
+            directoryList.Reverse();
+            var newdir = targetfolder;
+            foreach (var name in directoryList)
+            {
+                newdir = Path.Combine(newdir, name);
+            }
+            Directory.CreateDirectory(newdir);
+            return newdir;
         }
         async void StartPrediction1()
         {
@@ -470,8 +490,8 @@ namespace TNCApp_New
 
             List<string> fileorflolder = new List<string>();
             fileorflolder.Add("process file");
-            fileorflolder.Add("process all csv in folder");
-            fileorflolder.Add("process all photos in foler");
+            fileorflolder.Add("process all csv in folder or subfolder");
+            fileorflolder.Add("process all photos in foler or subfoler");
             ConfirmDIalog conDlg = new ConfirmDIalog(fileorflolder);
 
             // Configure the dialog box
@@ -487,9 +507,14 @@ namespace TNCApp_New
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 openFileDialog.Multiselect = true;
                 openFileDialog.ShowDialog();
-                
-                
+
+                if (!File.Exists(openFileDialog.FileName))
+                {
+                    richTextBox1.Text = "invliad file chosse";
+                    return;
+                }
                 imagePaths = new List<string>(openFileDialog.FileNames);
+                RootProcessFolder = Path.GetDirectoryName(openFileDialog.FileName);
                 imagePath_2.Add(imagePaths);
 
                 //singleProcess(imagePaths);
@@ -504,6 +529,7 @@ namespace TNCApp_New
 
                     if ( !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                     {
+                        RootProcessFolder = Path.GetFileName(fbd.SelectedPath);
                         DirectoryInfo d = new DirectoryInfo(fbd.SelectedPath);
                         
                         var files = d.GetFiles("*.csv", SearchOption.AllDirectories);
@@ -529,9 +555,10 @@ namespace TNCApp_New
 
                     if (!string.IsNullOrWhiteSpace(fbd.SelectedPath))
                     {
+                        RootProcessFolder = Path.GetFileName(fbd.SelectedPath);
                         var files = Directory.GetFiles(fbd.SelectedPath,"*.JPG",SearchOption.AllDirectories);
                         List<string> imagepaths = new List<string>();
-                        string dir = "test";
+                        string dir = "testLOOLOL";
 
                         foreach (var file in files)
                         {
@@ -567,57 +594,8 @@ namespace TNCApp_New
 
         }
         
-    static void WalkDirectoryTree(System.IO.DirectoryInfo root)
-    {
-        System.IO.FileInfo[] files = null;
-        System.IO.DirectoryInfo[] subDirs = null;
 
-        // First, process all the files directly under this folder
-        try
-        {
-            files = root.GetFiles("*.JPG");
-        }
-        // This is thrown if even one of the files requires permissions greater
-        // than the application provides.
-        catch (UnauthorizedAccessException e)
-        {
-            // This code just writes out the message and continues to recurse.
-            // You may decide to do something different here. For example, you
-            // can try to elevate your privileges and access the file again.
-           // log.Add(e.Message);
-        }
-
-        catch (System.IO.DirectoryNotFoundException e)
-        {
-            Console.WriteLine(e.Message);
-        }
-
-        if (files != null)
-        {
-                List<string>imagepaths = new List<string>();
-            files = root.GetFiles("*");
-        }
-        foreach (var file in files)
-        {
-            if (file.Extension == ".jpg" || file.Extension == ".JPG")
-            {
-                
-            }
-        }
-        if (files != null)
-        {
-
-                 // Now find all the subdirectories under this directory.
-                 subDirs = root.GetDirectories();
-
-            foreach (System.IO.DirectoryInfo dirInfo in subDirs)
-            {
-                // Resursive call for each subdirectory.
-                WalkDirectoryTree(dirInfo);
-            }
-        }            
-    }
-        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models)
+        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models, string Rootdir,bool is_threshhold)
         {
             int i = 0;
             int workDays = 1;
@@ -629,16 +607,19 @@ namespace TNCApp_New
             var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
             csv.AppendLine(newLine);
             string folderPath = Path.GetDirectoryName(models[0].FilePath);
-            string pathString = System.IO.Path.Combine(folderPath, cameraLocation);
-            System.IO.Directory.CreateDirectory(pathString);
+
             string speciesName = "";
             var lastPhotoSpecie = speciesName;
             string firstDetected = "";
             string speciesNamef = "";
+            string imagePath="";
+            var newdir = processDirctory(GenerateFolder,models[0].FilePath, Rootdir);
+            string pathString = System.IO.Path.Combine(newdir, cameraLocation);
+            System.IO.Directory.CreateDirectory(pathString);
             foreach (var model in models)
             {
 
-                var imagePath = model.FilePath;
+                imagePath = model.FilePath;
                 if (!File.Exists(imagePath))
                 {
                     continue;
@@ -656,7 +637,7 @@ namespace TNCApp_New
                     //this is the part for the threshhold
                     int CorrectedIndex = 0;
                     speciesName = sorted.ToList()[0].Tag;
-                    if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate)
+                    if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate||is_threshhold==false)
                     {
 
                         items = new List<string>();
@@ -736,6 +717,9 @@ namespace TNCApp_New
                 
                 i++;
             }
+
+
+            var datadir = processDirctory(DataVisFolder, models[0].FilePath, Rootdir);
             File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
             File.WriteAllText(Path.Combine(folderPath, "done.txt"), "", Encoding.Default);
             File.WriteAllText(Path.Combine(pathString, $"{cameraLocation}.csv"), csv.ToString(), Encoding.Default);
@@ -744,7 +728,7 @@ namespace TNCApp_New
                 this.richTextBox1.Text = ("Done");
                 this.ConfirmButton.Visibility = Visibility.Hidden;
                 this.ConfirmTextBox.Visibility = Visibility.Hidden;
-                var path = Path.Combine(DataVisFolder, cameraLocation + ".data");
+                var path = Path.Combine(datadir, cameraLocation + ".data");
                 var append = false;
                 using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
                 {
@@ -758,5 +742,9 @@ namespace TNCApp_New
             return;
         }
 
+        private void BrowseBtn_Click(object sender, RoutedEventArgs e)
+        {
+            confrim_photos(false);
+        }
     }
 }

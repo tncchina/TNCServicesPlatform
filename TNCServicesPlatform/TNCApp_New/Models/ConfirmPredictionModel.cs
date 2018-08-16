@@ -34,7 +34,6 @@ namespace TNCApp_New.Models
         public List<Prediction> Predictions { get; set; }
 
 
-
     }
 
 }
