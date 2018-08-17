@@ -1,0 +1,23 @@
+﻿<Window x:Class="TNCApp_New.camerainformationwithdirectory"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TNCApp_New"
+        mc:Ignorable="d"
+        Title="camerainformationwithdirectory" Height="533.658" Width="1372.714">
+    <Grid Margin="0,0,872.5,66.5">
+        <StackPanel x:Name="StackName" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="500" Margin="0,0,-117,0"/>
+        <Grid HorizontalAlignment="Left" Height="403" Margin="500,0,-270,0" VerticalAlignment="Top" Width="265">
+            <StackPanel x:Name="StackLocation" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="265"/>
+        </Grid>
+        <Grid HorizontalAlignment="Left" Height="403" Margin="770,-1,-532,0" VerticalAlignment="Top" Width="257">
+            <StackPanel x:Name="StackNumber" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="257"/>
+        </Grid>
+        <Button x:Name="Button" Content="Confirm" HorizontalAlignment="Left" Height="101" Margin="0,407,-873,-68.5" VerticalAlignment="Top" Width="1368" FontSize="48" Click="Button_Click_1"/>
+        <Grid HorizontalAlignment="Left" Height="399" Margin="1032,3,-700.5,0" VerticalAlignment="Top" Width="336"/>
+        <StackPanel x:Name="StackTime" HorizontalAlignment="Left" Height="403" Margin="1032,4,-916,-4" VerticalAlignment="Top" Width="379"/>
+
+    </Grid>
+
+</Window>

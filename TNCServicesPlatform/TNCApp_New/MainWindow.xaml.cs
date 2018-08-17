@@ -50,11 +50,20 @@ namespace TNCApp_New
         Function modelFunc { get; set; }
         public string RootProcessFolder { get; set; }
         public string GenerateFolder { get; set; }
+        public List<string> CameraLocations { get; set; }
+        public List<string> CameraNumbers { get; set; }
+        public List<string> CorrectedTime { get; set; }
+        public int IndexCamera { get; set; }
+        public bool SinorMul { get; set; }
 
         public MainWindow()
         {
             
             InitializeComponent();
+            IndexCamera = 0;
+            CameraLocations = new List<string>();
+            CameraNumbers = new List<string>();
+            CorrectedTime = new List<string>();
             this.UploadingBar.Value = 0;
             this.StateLocal = true;
             this.ConfidenceRate = 90;
@@ -269,12 +278,13 @@ namespace TNCApp_New
                     using (Stream stream = File.Open(confirmpath, FileMode.Open))
                     {
                         var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                        var nice = (Tuple<string, string, List<ConfirmPredictionModel>, string>)binaryFormatter.Deserialize(stream);
+                        var nice = (Tuple<string, string, List<ConfirmPredictionModel>, string,DateTime>)binaryFormatter.Deserialize(stream);
                         var cameraName = nice.Item1;
                         var folderName = nice.Item2;
                         var confirmPredictions = nice.Item3;
                         var rootdir = nice.Item4;
-                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold); });
+                        var correctTime = nice.Item5;
+                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold, correctTime); });
                     }
 
                     break;
@@ -316,11 +326,12 @@ namespace TNCApp_New
 
         async void singleProcess(List<string> imagePaths)
         {
-            if (imagePaths.Count==0)
+            if (imagePaths.Count == 0)
             {
                 this.richTextBox1.Text = "invalid input";
                 return;
             }
+
             var Pathname = imagePaths[0];
             ;
             if (Directory.GetFiles(Path.GetDirectoryName(Pathname), "done.txt", SearchOption.TopDirectoryOnly).Length !=
@@ -328,6 +339,7 @@ namespace TNCApp_New
             {
                 return;
             }
+
             List<String> items = new List<String>();
             double i = 0;
             int totalFilesNum = 0;
@@ -339,6 +351,7 @@ namespace TNCApp_New
             string cameraNumber;
             string folderName;
             string positionNumber;
+            DateTime cortime = new DateTime();
             if (!File.Exists(Pathname))
             {
                 this.richTextBox1.Text = "invlid file chosen";
@@ -347,16 +360,40 @@ namespace TNCApp_New
 
             if (Path.GetExtension(Pathname) == ".jpg" || Path.GetExtension(Pathname) == ".JPG")
             {
-                Window1 dlg = new Window1();
-                //Ask for camera information
-                // Configure the dialog box
-                dlg.Owner = this;
-                // Open the dialog box modally 
-                dlg.ShowDialog();
-                dlg.Top = this.Top + 20;
-                cameraNumber = dlg.CameraNumber.Text;
-                folderName = dlg.CameraLocation.Text;
-                positionNumber = dlg.CameraLocation.Text;
+                if (SinorMul)
+                {
+                    Window1 dlg = new Window1();
+                    //Ask for camera information
+                    // Configure the dialog box
+                    dlg.Owner = this;
+                    // Open the dialog box modally 
+                    dlg.ShowDialog();
+                    dlg.Top = this.Top + 20;
+                    cameraNumber = dlg.CameraNumber.Text;
+                    folderName = dlg.CameraLocation.Text;
+                    positionNumber = dlg.CameraLocation.Text;
+                    if (!string.IsNullOrEmpty(dlg.CorectedTime.Text))
+                    {
+                        cortime = Convert.ToDateTime(dlg.CorectedTime.Text);
+                    }
+                    else
+                    {
+                        cortime = File.GetLastWriteTime(imagePaths[0]);
+                    }
+
+                }
+                else
+                {
+                    cameraNumber = CameraNumbers[IndexCamera];
+                    folderName = CameraLocations[IndexCamera];
+                    positionNumber = CameraLocations[IndexCamera];
+                    if (!string.IsNullOrEmpty(CorrectedTime[IndexCamera])) cortime = Convert.ToDateTime(CorrectedTime[IndexCamera]);
+                    else
+                    {
+                        cortime = File.GetLastWriteTime(imagePaths[0]);
+                    }
+                    IndexCamera++;
+                }
 
                 totalFilesNum = imagePaths.Count;
             }
@@ -371,7 +408,7 @@ namespace TNCApp_New
                 cameraNumber = values[4];
                 int j = 0;
                 var imagepath = Pathname;
-                var d = Directory.GetFiles(Path.GetDirectoryName(imagepath), "*.JPG",SearchOption.AllDirectories);
+                var d = Directory.GetFiles(Path.GetDirectoryName(imagepath), "*.JPG", SearchOption.AllDirectories);
                 foreach (var line in lines)
                 {
                     if (j == 0 || line == "")
@@ -384,12 +421,14 @@ namespace TNCApp_New
                     var fileName = values[0];
                     var extension = values[2];
                     //assume the file is in a location
-                    
+
                     imagePaths.Add(Path.GetDirectoryName(d[0]) + $"\\{fileName}.{extension}");
                     j++;
                 }
 
                 totalFilesNum = imagePaths.Count;
+                cortime = File.GetLastWriteTime(imagePaths[0]);
+
                 ;
             }
             else
@@ -399,7 +438,8 @@ namespace TNCApp_New
             }
 
 
-            foreach (String imagePath in imagePaths)
+
+        foreach (String imagePath in imagePaths)
             {
                 if (!File.Exists(imagePath))
                 {
@@ -449,7 +489,7 @@ namespace TNCApp_New
             using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
             {
                 var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                binaryFormatter.Serialize(stream, new Tuple<string, string, List<ConfirmPredictionModel>,string>(cameraNumber, positionNumber, ConfirmPredictions,RootProcessFolder));
+                binaryFormatter.Serialize(stream, new Tuple<string, string, List<ConfirmPredictionModel>,string,DateTime>(cameraNumber, positionNumber, ConfirmPredictions,RootProcessFolder, cortime));
             }
 
             this.UploadingBar.Value = 100;
@@ -481,6 +521,12 @@ namespace TNCApp_New
         }
         async void StartPrediction1()
         {
+            SinorMul = true;
+            List<string> directorys = new List<string>();
+            IndexCamera = 0;
+            CameraLocations = new List<string>();
+            CameraNumbers = new List<string>();
+
             this.ListV.ItemsSource = new List<String>();
             this.UploadingBar.Value = 0;
             this.richTextBox1.Clear();
@@ -514,7 +560,8 @@ namespace TNCApp_New
                     return;
                 }
                 imagePaths = new List<string>(openFileDialog.FileNames);
-                RootProcessFolder = Path.GetDirectoryName(openFileDialog.FileName);
+                RootProcessFolder = Path.GetFileName(Path.GetDirectoryName(openFileDialog.FileName));
+                directorys.Add(Path.GetDirectoryName(openFileDialog.FileName));
                 imagePath_2.Add(imagePaths);
 
                 //singleProcess(imagePaths);
@@ -548,7 +595,7 @@ namespace TNCApp_New
             }
             else if (index == 2)
             {
-                List<string> directorys = new List<string>();
+                SinorMul = false;
                 using (var fbd = new FolderBrowserDialog())
                 {
                     DialogResult result = fbd.ShowDialog();
@@ -576,13 +623,28 @@ namespace TNCApp_New
 
                         }
                     }
+                    else
+                    {
+                        richTextBox1.Text = "not valid path";
+                        return;
+                    }
                 }
 
                 foreach (var dir in directorys)
                 {
                     imagePath_2.Add(new List<string>(Directory.GetFiles(dir)));
                 }
-                
+                camerainformationwithdirectory cawindow = new camerainformationwithdirectory(directorys);
+                cawindow.Top = this.Top + 20;
+                cawindow.ShowDialog();
+                if (cawindow.CameraNumbers.Count==0)
+                {
+                    richTextBox1.Text = "invlid cameralocation typed";
+                    return;
+                }
+                CameraNumbers = cawindow.CameraNumbers;
+                CameraLocations = cawindow.CameraLocations;
+                CorrectedTime = cawindow.DateTimes;
             }
 
             foreach (var filepaths in imagePath_2)
@@ -595,12 +657,12 @@ namespace TNCApp_New
         }
         
 
-        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models, string Rootdir,bool is_threshhold)
+        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models, string Rootdir,bool is_threshhold,DateTime correctedTime)
         {
             int i = 0;
             int workDays = 1;
 
-            var lastWorkDay = File.GetCreationTime(models[0].FilePath).Date;
+            var lastWorkDay = correctedTime;
             IDictionary<string, int> dict = new Dictionary<string, int>();
             var csv = new StringBuilder();
             List<String> items = new List<String>();
@@ -616,6 +678,7 @@ namespace TNCApp_New
             var newdir = processDirctory(GenerateFolder,models[0].FilePath, Rootdir);
             string pathString = System.IO.Path.Combine(newdir, cameraLocation);
             System.IO.Directory.CreateDirectory(pathString);
+            var OriginalTime = File.GetLastWriteTime(models[0].FilePath);
             foreach (var model in models)
             {
 
@@ -624,11 +687,11 @@ namespace TNCApp_New
                 {
                     continue;
                 }
-                var shootingDate = File.GetCreationTime(imagePath).Date;
-                var shootingTime = File.GetCreationTime(imagePath).ToShortTimeString();
+                var shootingDate = (correctedTime+(File.GetLastWriteTime(imagePath)- OriginalTime)).Date;
+                var shootingTime = (correctedTime + (File.GetLastWriteTime(imagePath) - OriginalTime)).ToShortTimeString();
                 var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
                 var fileExt = Path.GetExtension(imagePath);
-                workDays += (shootingDate - lastWorkDay).Days;
+                workDays = (shootingDate - lastWorkDay).Days;
                 if (model.IsPhoto == true)
                 {
                     Bitmap bmp = new Bitmap(imagePath);
@@ -682,11 +745,13 @@ namespace TNCApp_New
                     lastPhotoSpecie = speciesName;
                     speciesNamef = speciesName;
                 }
-                else
+                else 
                 {
+                    File.Copy(imagePath, Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}"));
                     speciesNamef = "";
                     firstDetected = "";
                 }
+                
 
                 newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
                     $"{cameraLocation}-{i.ToString("D4")}",
