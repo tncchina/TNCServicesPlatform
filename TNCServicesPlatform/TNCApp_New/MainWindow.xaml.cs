@@ -637,7 +637,7 @@ namespace TNCApp_New
                 camerainformationwithdirectory cawindow = new camerainformationwithdirectory(directorys);
                 cawindow.Top = this.Top + 20;
                 cawindow.ShowDialog();
-                if (cawindow.CameraNumbers.Count==0)
+                if (cawindow.CameraNumbers.Count!= directorys.Count||cawindow.CameraLocations.Count!=directorys.Count)
                 {
                     richTextBox1.Text = "invlid cameralocation typed";
                     return;
@@ -745,13 +745,20 @@ namespace TNCApp_New
                     lastPhotoSpecie = speciesName;
                     speciesNamef = speciesName;
                 }
-                else 
+                else if(fileExt == ".AVI"||fileExt==".avi")
                 {
-                    File.Copy(imagePath, Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}"));
+                    if(!File.Exists(Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}")))
+                    {
+                        File.Copy(imagePath, Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}"));
+                    }
+                    
                     speciesNamef = "";
                     firstDetected = "";
                 }
-                
+                else
+                {
+                    continue;
+                }                
 
                 newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
                     $"{cameraLocation}-{i.ToString("D4")}",
