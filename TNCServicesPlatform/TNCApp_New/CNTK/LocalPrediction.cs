@@ -61,7 +61,15 @@ namespace TNCApp_New.CNTK
             outputDataMap.Add(outputVar, null);
 
             // Start evaluation on the device
-            modelFunc.Evaluate(inputDataMap, outputDataMap, device);
+            try
+            {
+                modelFunc.Evaluate(inputDataMap, outputDataMap, device);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
 
             // Get evaluate result as dense output
             var outputVal = outputDataMap[outputVar];

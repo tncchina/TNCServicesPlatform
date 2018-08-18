@@ -9,7 +9,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
 using System.Collections;
+using System.Deployment.Application;
 using System.Drawing;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -67,14 +69,28 @@ namespace TNCApp_New
             this.UploadingBar.Value = 0;
             this.StateLocal = true;
             this.ConfidenceRate = 90;
-            string domainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string modelFilePath = Path.Combine(domainBaseDirectory, @"CNTK\Models\TNC_ResNet18_ImageNet_CNTK.model");
-            if (!File.Exists(modelFilePath))
+            //for deployment
+            string domainBaseDirectory = ApplicationDeployment.CurrentDeployment.DataDirectory;
+            //string domainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string modelFilePath = Directory.GetFiles(domainBaseDirectory, "TNC_ResNet18_ImageNet_CNTK.model",SearchOption.AllDirectories)[0]; ; //Path.Combine(domainBaseDirectory, @"CNTK\Models\TNC_ResNet18_ImageNet_CNTK.model");
+                if (!File.Exists(modelFilePath))
+                {
+                    throw new FileNotFoundException(modelFilePath, string.Format("Error: The model '{0}' does not exist. Please follow instructions in README.md in <CNTK>/Examples/Image/Classification/ResNet to create the model.", modelFilePath));
+                }
+
+            try
             {
-                throw new FileNotFoundException(modelFilePath, string.Format("Error: The model '{0}' does not exist. Please follow instructions in README.md in <CNTK>/Examples/Image/Classification/ResNet to create the model.", modelFilePath));
+                DeviceDescriptor device = DeviceDescriptor.CPUDevice;// DeviceDescriptor.CPUDevice;
+                modelFunc = Function.Load(modelFilePath, device);
             }
-            DeviceDescriptor device = DeviceDescriptor.CPUDevice;
-            modelFunc = Function.Load(modelFilePath, device);
+            catch (Exception e)
+            {
+                richTextBox1.Text = e.Message;
+                ;
+                //throw;
+            }
+                
+                //modelFunc = Function.Load(modelFilePath, device);
             RootFolder= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TNC");
             ConfirmFolder = Path.Combine(RootFolder, "confirm");
             DataVisFolder = Path.Combine(RootFolder, "datavis");
@@ -459,7 +475,16 @@ namespace TNCApp_New
                     }
                     else
                     {
-                        result = LocalPrediction.EvaluateCustomDNN(imagePath, modelFunc);
+                        try
+                        {
+                            result = LocalPrediction.EvaluateCustomDNN(imagePath, modelFunc);
+                        }
+                        catch (Exception e)
+                        {
+                            richTextBox1.Text = e.ToString();
+                            throw;
+                        }
+                       
                     }
                     ConfirmPredictions.Add(new ConfirmPredictionModel()
                     {
