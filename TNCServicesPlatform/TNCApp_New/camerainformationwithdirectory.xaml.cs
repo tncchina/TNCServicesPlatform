@@ -42,7 +42,8 @@ namespace TNCApp_New
             {
                 Name = "folderNameTB",
                 Text = "folderName" + ":",
-                FontSize = 15
+                FontSize = 15,
+                Height = 20
 
             });
 
@@ -50,21 +51,24 @@ namespace TNCApp_New
             {
                 Name = "CameraLocationTB",
                 Text = "CameraLocation" + ":",
-                FontSize = 15
+                FontSize = 15,
+                Height = 20
 
             });
             StackNumber.Children.Add(new TextBlock()
             {
                 Name = "CameraNumberTB",
                 Text = "CameraNumber" + ":",
-                FontSize = 15
+                FontSize = 15,
+                Height = 20
 
             });
             StackTime.Children.Add(new TextBlock()
             {
                 Name = "Timeajustment",
                 Text = "CorrectTime M/D/Y xx/xx/xxxx xx:xx(leave blank if no change)" + ":",
-                FontSize = 15
+                FontSize = 15,
+                Height = 20
 
             });
             int i =0;
@@ -74,22 +78,26 @@ namespace TNCApp_New
                 {
                     Name = "TextBlock"  + i,
                     Text = dir,
-                    FontSize = 15
+                    FontSize = 15,
+                    Height = 20
                 });
                 StackLocation.Children.Add(new TextBox()
                 {
                     Name = "TextBoxLocation" + i,
-                    FontSize = 15
+                    FontSize = 15,
+                    Height = 20
                 });
                 StackNumber.Children.Add(new TextBox()
                  {
                      Name = "TextBoxNumber"  + i,
-                     FontSize = 15
+                     FontSize = 15,
+                     Height = 20
                 });
                 StackTime.Children.Add(new TextBox()
                 {
                     Name = "TextBoxDateTime" + i,
-                    FontSize = 15
+                    FontSize = 15,
+                    Height = 20
                 });
                 i++;
             }

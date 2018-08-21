@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TNCApp_New"
         mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
         Title="camerainformationwithdirectory" Height="533.658" Width="1372.714">
     <Grid Margin="0,0,872.5,66.5">
         <StackPanel x:Name="StackName" HorizontalAlignment="Left" Height="403" VerticalAlignment="Top" Width="500" Margin="0,0,-117,0"/>
@@ -16,7 +17,7 @@
         </Grid>
         <Button x:Name="Button" Content="Confirm" HorizontalAlignment="Left" Height="101" Margin="0,407,-873,-68.5" VerticalAlignment="Top" Width="1368" FontSize="48" Click="Button_Click_1"/>
         <Grid HorizontalAlignment="Left" Height="399" Margin="1032,3,-700.5,0" VerticalAlignment="Top" Width="336"/>
-        <StackPanel x:Name="StackTime" HorizontalAlignment="Left" Height="403" Margin="1032,4,-916,-4" VerticalAlignment="Top" Width="379"/>
+        <StackPanel x:Name="StackTime" HorizontalAlignment="Left" Height="403" Margin="1027,-1,-911,0" VerticalAlignment="Top" Width="379"/>
 
     </Grid>
 

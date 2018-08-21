@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        WindowStartupLocation="CenterScreen"
         xmlns:local="clr-namespace:TNCApp_New"
         xmlns:Themes="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero2" x:Class="TNCApp_New.MainWindow"
         mc:Ignorable="d"
@@ -309,23 +310,26 @@
                 </ProgressBar>
 
                 <Image x:Name="pictureBox1" HorizontalAlignment="Left" Height="368" VerticalAlignment="Top" Width="560" Margin="-1,-9,0,0" Grid.RowSpan="2"/>
-                <TextBox x:Name="richTextBox1" HorizontalAlignment="Left" Height="215" Margin="0,101,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" FontSize="36" FontFamily="Century Gothic" Background="{x:Null}" Grid.ColumnSpan="5" BorderBrush="{x:Null}" Grid.Row="1" Foreground="White" SelectionBrush="{x:Null}"/>
+                <TextBlock x:Name="richTextBox1" HorizontalAlignment="Left" Height="161" Margin="0,155,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" FontSize="36" FontFamily="Century Gothic" Background="{x:Null}" Grid.ColumnSpan="5"  Grid.Row="1" Foreground="White" />
                 <ListBox x:Name="ListV" HorizontalAlignment="Left" Height="374" Margin="1,0,0,0" VerticalAlignment="Top" Width="271" Grid.ColumnSpan="4" Grid.Column="1" Grid.RowSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White" FontFamily="ListV" FontSize="18" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseLeftButtonDown="ListV_MouseLeftButtonDown" PreviewMouseLeftButtonDown="ListV_PreviewMouseLeftButtonDown"/>
-                <TextBox x:Name="ConfirmTextBox" HorizontalAlignment="Left" Height="38" Margin="10,217,0,0" Grid.Row="1" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="289" Foreground="#FFF6F4F4" Background="{x:Null}" FontSize="25" Visibility="Hidden"/>
-                <Button x:Name="ConfirmButton" Content="Submit" HorizontalAlignment="Left" Height="38" Margin="342,217,0,0" Grid.Row="1" VerticalAlignment="Top" Width="162" Background="{x:Null}" Foreground="#FFF8F7F7" FontSize="20" Visibility="Hidden" Click="ConfirmButton_Click"/>
+                <TextBox x:Name="ConfirmTextBox" HorizontalAlignment="Left" Height="38" Margin="10,268,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="289" Foreground="#FFF6F4F4" Background="{x:Null}" FontSize="25" Visibility="Hidden"/>
+                <Button x:Name="ConfirmButton" Content="Submit" HorizontalAlignment="Left" Height="38" Margin="337,268,0,0" Grid.Row="1" VerticalAlignment="Top" Width="162" Background="{x:Null}" Foreground="#FFF8F7F7" FontSize="20" Click="ConfirmButton_Click" Visibility="Hidden"/>
+                <TextBlock x:Name="FolderProgressBox" HorizontalAlignment="Left" Height="69" Margin="0,86,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="559"  FontFamily="Century Gothic" FontSize="36" Background="{x:Null}" Foreground="#FFFAF8F8" />
             </Grid>
-            <Grid HorizontalAlignment="Left" Height="646" VerticalAlignment="Top" Width="129" Margin="10,0,0,0">
-                <Button x:Name ="BtnHome" Content="Home" HorizontalAlignment="Left" Margin="-9,133,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Home_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,133,0,0" Source="iconR/Dog House_40px.png"/>
-                <Button x:Name ="BtnUpload" Content="Prediction" Margin="0,187,-9,0" VerticalAlignment="Top" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BtnUpload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,187,0,0" Source="iconR/Maintenance_40px.png"/>
-                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="-9,224,0,0" Source="iconR/Globe Earth_40px.png"/>
-                <Button x:Name ="ConfirmBtn" Content="Confirm Picture" HorizontalAlignment="Left" Margin="-9,320,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Confirm_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-                <Button x:Name ="ReportsBtn" Content="View Reports" HorizontalAlignment="Left" Margin="-9,357,0,0" VerticalAlignment="Top" Width="128" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Reports_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-                <TextBox x:Name="TextLineBox" HorizontalAlignment="Left" Height="24" Margin="43,229,-34,0" TextWrapping="Wrap" Text="Offline" VerticalAlignment="Top" Width="120" TextChanged="TextBox_TextChanged" FontSize="16" Background="{x:Null}" Foreground="White" BorderBrush="{x:Null}" FontFamily="Century Gothic" SelectionBrush="{x:Null}"/>
-                <Button x:Name ="BrowseBtn" Content="Browse" HorizontalAlignment="Left" Margin="-9,394,0,0" VerticalAlignment="Top" Width="128" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BrowseBtn_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+            <Grid HorizontalAlignment="Left" Height="646" VerticalAlignment="Top" Width="139">
+                <Button x:Name ="BtnHome" Content="Home" HorizontalAlignment="Left" Margin="0,96,-9,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Home_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="0,96,0,0" Source="iconR/Dog House_40px.png"/>
+                <Button x:Name ="BtnUpload" Content="Predict" Margin="0,274,0,0" VerticalAlignment="Top" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BtnUpload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="0,144,0,0" Source="iconR/Globe Earth_40px.png"/>
+                <Button x:Name ="ConfirmBtn" Content="Confirm" HorizontalAlignment="Left" Margin="0,333,-9,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Confirm_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Button x:Name ="ReportsBtn" Content="View Reports" HorizontalAlignment="Left" Margin="0,397,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Reports_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <TextBlock x:Name="TextLineBox" HorizontalAlignment="Left" Height="24" Margin="37,152,-28,0" TextWrapping="Wrap" Text="Offline" VerticalAlignment="Top" Width="120"  FontSize="16" Background="{x:Null}" Foreground="White"  FontFamily="Century Gothic" />
+                <Button x:Name ="BrowseBtn" Content="Browse" HorizontalAlignment="Left" Margin="1,365,0,0" VerticalAlignment="Top" Width="137" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BrowseBtn_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <CheckBox x:Name="Continuation" Content="" HorizontalAlignment="Left" Margin="9,237,0,0" VerticalAlignment="Top" Style="{DynamicResource OrangeSwitchStyle}" RenderTransformOrigin="0.412,1.861" Checked="Continuation_Checked" Unchecked="Continuation_Unchecked"/>
+                <TextBlock x:Name="ContinuationBox" HorizontalAlignment="Left" Height="24" Margin="10,208,0,0" TextWrapping="Wrap" Text="Continue Off" VerticalAlignment="Top" Width="128"  FontSize="16" Background="{x:Null}" Foreground="White"  FontFamily="Century Gothic" />
+                <CheckBox Content="" HorizontalAlignment="Left" Margin="9,176,0,0" VerticalAlignment="Top" Style="{DynamicResource OrangeSwitchStyle}" RenderTransformOrigin="0.412,1.861" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                <Button x:Name ="UploadOnlyBtn" Content="Upload" HorizontalAlignment="Left" Margin="0,306,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Upload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
             </Grid>
-            <CheckBox Content="" HorizontalAlignment="Left" Margin="10,268,0,0" VerticalAlignment="Top" Style="{DynamicResource OrangeSwitchStyle}" RenderTransformOrigin="0.412,1.861" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
         </Grid>
 
     </Grid>

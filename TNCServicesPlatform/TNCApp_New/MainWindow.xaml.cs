@@ -57,6 +57,9 @@ namespace TNCApp_New
         public List<string> CorrectedTime { get; set; }
         public int IndexCamera { get; set; }
         public bool SinorMul { get; set; }
+        public int DirNum { get; set; }
+        public bool IsContinue { get; set; }
+        public bool UploadOnly { get; set; }
 
         public MainWindow()
         {
@@ -69,9 +72,11 @@ namespace TNCApp_New
             this.UploadingBar.Value = 0;
             this.StateLocal = true;
             this.ConfidenceRate = 90;
+
+            DirNum = 1;
+            IsContinue = false;
             //for deployment
-            string domainBaseDirectory = ApplicationDeployment.CurrentDeployment.DataDirectory;
-            //string domainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string domainBaseDirectory =  ApplicationDeployment.IsNetworkDeployed ? ApplicationDeployment.CurrentDeployment.DataDirectory: AppDomain.CurrentDomain.BaseDirectory;
             string modelFilePath = Directory.GetFiles(domainBaseDirectory, "TNC_ResNet18_ImageNet_CNTK.model",SearchOption.AllDirectories)[0]; ; //Path.Combine(domainBaseDirectory, @"CNTK\Models\TNC_ResNet18_ImageNet_CNTK.model");
                 if (!File.Exists(modelFilePath))
                 {
@@ -108,7 +113,7 @@ namespace TNCApp_New
             this.DragMove();
         }
         //using the image path, upload the image to cosmos and storage account
-        async Task<AnimalImage> UploadImage(string imagePath)
+        AnimalImage UploadImage(string imagePath)
         {
             try
             {
@@ -122,16 +127,18 @@ namespace TNCApp_New
                 string imageJson = JsonConvert.SerializeObject(image);
                 byte[] byteData = Encoding.UTF8.GetBytes(imageJson);
                 HttpResponseMessage response;
-
+                var debug = UploadOnly;
                 using (var content = new ByteArrayContent(byteData))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     this.richTextBox1.Text = ("Sending image info to Cosmos DataBase");
-                    this.UploadingBar.Value += 33;
-                   response = await client.PostAsync(uploadUrl, content);
+                    //this.UploadingBar.Value += 33;
+                    
+                   response = client.PostAsync(uploadUrl, content).Result;
                     //response = client.PostAsync(uploadUrl, content).Result;
                 }
 
+                UploadOnly = debug;
                 string responseStr = response.Content.ReadAsStringAsync().Result;
                 Console.WriteLine(responseStr);
                 AnimalImage imageResponse = JsonConvert.DeserializeObject<AnimalImage>(responseStr);
@@ -145,8 +152,8 @@ namespace TNCApp_New
                 using (msWrite)
                 {
                     this.richTextBox1.Text = ("Uploading image data to Storage Colletion");
-                    await blob.UploadFromStreamAsync(msWrite);
-                    this.UploadingBar.Value += 33;
+                    blob.UploadFromStreamAsync(msWrite).Wait();
+                    //this.UploadingBar.Value += 33;
                 }
 
                 return imageResponse;
@@ -190,7 +197,7 @@ namespace TNCApp_New
         {
             this.ListV.ItemsSource = new List<String>();
             this.UploadingBar.Value = 0;
-            this.richTextBox1.Clear();
+            this.richTextBox1.Text="";
             this.pictureBox1.Source = new BitmapImage();
             this.ConfirmButton.Visibility = Visibility.Hidden;
             this.ConfirmTextBox.Visibility = Visibility.Hidden;
@@ -201,8 +208,8 @@ namespace TNCApp_New
 
         private  void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
+            UploadOnly = false;
 
-            
             StartPrediction1();
 
         }
@@ -278,9 +285,17 @@ namespace TNCApp_New
         void confrim_photos(bool isThreshhold)
         {
             OpenFileDialog confirmdlg = new OpenFileDialog();
-            confirmdlg.InitialDirectory = ConfirmFolder;
+            if (isThreshhold)
+            {
+                confirmdlg.InitialDirectory = ConfirmFolder;
+            }
+            else
+            {
+                confirmdlg.InitialDirectory = BrowseFolder;
+            }
             confirmdlg.DefaultExt = ".tnc";
             confirmdlg.ShowDialog();
+
             var confirmpath = confirmdlg.FileName;
             if (!File.Exists(confirmpath))
             {
@@ -300,8 +315,9 @@ namespace TNCApp_New
                         var confirmPredictions = nice.Item3;
                         var rootdir = nice.Item4;
                         var correctTime = nice.Item5;
-                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold, correctTime); });
+                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold, correctTime,confirmpath); });
                     }
+
 
                     break;
 
@@ -311,14 +327,16 @@ namespace TNCApp_New
         }
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
-
+            this.FolderProgressBox.Text = "";
+            this.UploadingBar.Value = 0;
             confrim_photos(true);
-
+            
 
         }
 
         private void Reports_Click(object sender, RoutedEventArgs e)
         {
+            this.FolderProgressBox.Text = "";
             OpenFileDialog datadlg = new OpenFileDialog();
             datadlg.InitialDirectory = DataVisFolder;
             datadlg.DefaultExt = ".data";
@@ -350,11 +368,13 @@ namespace TNCApp_New
 
             var Pathname = imagePaths[0];
             ;
-            if (Directory.GetFiles(Path.GetDirectoryName(Pathname), "done.txt", SearchOption.TopDirectoryOnly).Length !=
+/*            if (Directory.GetFiles(Path.GetDirectoryName(Pathname), "done.txt", SearchOption.TopDirectoryOnly).Length !=
                 0)
             {
+                if(IsContinue == true)
                 return;
-            }
+                else
+            }*/
 
             List<String> items = new List<String>();
             double i = 0;
@@ -374,7 +394,7 @@ namespace TNCApp_New
                 return;
             }
 
-            if (Path.GetExtension(Pathname) == ".jpg" || Path.GetExtension(Pathname) == ".JPG")
+            if (Path.GetExtension(Pathname) != ".csv")
             {
                 if (SinorMul)
                 {
@@ -466,13 +486,21 @@ namespace TNCApp_New
                     //this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
                     if (this.StateLocal != true)
                     {
-                        AnimalImage image = await UploadImage(imagePath);
+                        AnimalImage image =  UploadImage(imagePath);
                         //this.richTextBox1.Text = image.UploadBlobSASUrl;
                         // 2. image classification
+                        if (UploadOnly)
+                        {
+                            i++;
+                            this.UploadingBar.Value = Math.Round(i / (totalFilesNum) * 100);
+                            continue;
+                        }
                         string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
                         this.richTextBox1.Text = ("Waiting for prediction result...");
                         result = await MakePredictionRequestCNTK(imageUrl);
                     }
+
+                  
                     else
                     {
                         try
@@ -507,7 +535,7 @@ namespace TNCApp_New
                 AllowUIToUpdate();
 
             }
-
+            if(UploadOnly) return;
             var newdir = processDirctory(ConfirmFolder,Pathname, RootProcessFolder);
             var path = Path.Combine(newdir, positionNumber + ".tnc");
             bool append = false;
@@ -519,6 +547,7 @@ namespace TNCApp_New
 
             this.UploadingBar.Value = 100;
             this.richTextBox1.Text = ("Done");
+            File.WriteAllText(Path.Combine(Path.GetDirectoryName(Pathname), "done.txt"), "", Encoding.Default);
             return;
 
         }
@@ -526,6 +555,10 @@ namespace TNCApp_New
         string processDirctory(string targetfolder,string Pathname,string Rootdir)
         {
             List<string> directoryList = new List<string>();
+            if (Rootdir == Path.GetFileName(Path.GetDirectoryName(Pathname)))
+            {
+                return targetfolder;
+            }
             string pp = Path.GetDirectoryName(Path.GetDirectoryName(Pathname));
             string directoryName = Path.GetFileName(pp);
             while (Rootdir != directoryName)
@@ -554,7 +587,7 @@ namespace TNCApp_New
 
             this.ListV.ItemsSource = new List<String>();
             this.UploadingBar.Value = 0;
-            this.richTextBox1.Clear();
+            this.richTextBox1.Text="";
             this.pictureBox1.Source = new BitmapImage();
             this.ConfirmButton.Visibility = Visibility.Hidden;
             this.ConfirmTextBox.Visibility = Visibility.Hidden;
@@ -609,9 +642,14 @@ namespace TNCApp_New
                         foreach (var file in files)
                         {
                             Pathname = file.FullName;
-                            imagePaths = new List<string>();
-                            imagePaths.Add(Pathname);
-                            imagePath_2.Add(imagePaths);
+                            if (Directory.GetFiles(Path.GetDirectoryName(Pathname),"done.txt",SearchOption.TopDirectoryOnly).Length!=0)
+                            {
+                                if (IsContinue) continue;
+                            }
+                                imagePaths = new List<string>();
+                                imagePaths.Add(Pathname);
+                                imagePath_2.Add(imagePaths);
+  
                             //singleProcess(imagePaths);
                         }
                     }
@@ -638,11 +676,21 @@ namespace TNCApp_New
                             if (dirpath != dir)
                             {
                                 var a = Directory.GetFiles(dirpath, "done.txt", SearchOption.TopDirectoryOnly);
-                                if (a.Length==0)
+                                if (a.Length != 0)
+                                {
+                                    if (!IsContinue)
+                                    {
+                                       File.Delete(a[0]);
+                                       directorys.Add(dirpath);
+                                       dir = dirpath;
+                                    }
+                                }
+                                else
                                 {
                                     directorys.Add(dirpath);
                                     dir = dirpath;
                                 }
+
                                 
                             }
 
@@ -672,17 +720,21 @@ namespace TNCApp_New
                 CorrectedTime = cawindow.DateTimes;
             }
 
+            int i = 1;
+            
             foreach (var filepaths in imagePath_2)
             {
+                this.FolderProgressBox.Text = $"Process {i} of  {imagePath_2.Count} folders";
+                AllowUIToUpdate();
                 singleProcess(filepaths);
+                i++;
             }
-      
-
-
+            this.FolderProgressBox.Text="Done";
+            return;
         }
         
 
-        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models, string Rootdir,bool is_threshhold,DateTime correctedTime)
+        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models, string Rootdir,bool is_threshhold,DateTime correctedTime , string originalLocation)
         {
             int i = 0;
             int workDays = 1;
@@ -762,7 +814,7 @@ namespace TNCApp_New
                             {
                                 speciesName = ConfirmTextBox.Text;
                             }
-
+                            
                         });
 
                     }
@@ -810,15 +862,21 @@ namespace TNCApp_New
                 {
                     dict.Add(speciesName, 1);
                 }
-                csv.AppendLine(newLine);
+
                 
-                i++;
+                csv.AppendLine(newLine);
+                this.Dispatcher.Invoke(() =>
+                {
+                    double a = i;
+                    this.UploadingBar.Value = a / models.Count *100;
+                });
+                    i++;
             }
 
 
             var datadir = processDirctory(DataVisFolder, models[0].FilePath, Rootdir);
             File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
-            File.WriteAllText(Path.Combine(folderPath, "done.txt"), "", Encoding.Default);
+            
             File.WriteAllText(Path.Combine(pathString, $"{cameraLocation}.csv"), csv.ToString(), Encoding.Default);
             this.Dispatcher.Invoke(() => {
                 this.UploadingBar.Value = 100;
@@ -834,14 +892,37 @@ namespace TNCApp_New
                 }
 
             });
-
-
+            if (is_threshhold)
+            {
+                var browse = processDirctory(BrowseFolder, models[0].FilePath, Rootdir);
+                File.Move(originalLocation, Path.Combine(browse, $"{cameraLocation}.tnc"));
+            }
             return;
         }
 
         private void BrowseBtn_Click(object sender, RoutedEventArgs e)
         {
             confrim_photos(false);
+        }
+
+        private void Continuation_Checked(object sender, RoutedEventArgs e)
+        {
+            IsContinue = true;
+            ContinuationBox.Text = "Continue On";
+        }
+
+        private void Continuation_Unchecked(object sender, RoutedEventArgs e)
+        {
+            IsContinue = false;
+            ContinuationBox.Text = "Continue Off";
+        }
+
+        private void Upload_Click(object sender, RoutedEventArgs e)
+        {
+            if(StateLocal) return;
+            UploadOnly = true;
+            StartPrediction1();
+            UploadOnly = false;
         }
     }
 }
