@@ -14,11 +14,10 @@ namespace TNCApp_New.CNTK
 {
     class LocalPrediction
     {
-        public static ImagePredictionResultModel EvaluateCustomDNN(string imagePath)
+        public static ImagePredictionResultModel EvaluateCustomDNN(string imagePath ,Function modelFunc)
         {
-            string domainBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string workingDirectory = Environment.CurrentDirectory;
             DeviceDescriptor device = DeviceDescriptor.CPUDevice;
+            string workingDirectory = Environment.CurrentDirectory;
             string[] class_labels = new string[] { "空","牛","松鼠","人","雉鸡","猕猴","鼠","麂","滇金丝猴","鸟","狗",
                                                    "山羊","黄喉貂","豹猫","绵羊","黄鼬","黑熊","野兔","鬣羚","马","豪猪","其他"};
 
@@ -27,13 +26,7 @@ namespace TNCApp_New.CNTK
             // The model can be downloaded from <see cref="https://www.cntk.ai/Models/CNTK_Pretrained/ResNet20_CIFAR10_CNTK.model"/>
             // Please see README.md in <CNTK>/Examples/Image/Classification/ResNet about how to train the model.
             // string modelFilePath = Path.Combine(domainBaseDirectory, @"CNTK\Models\ResNet20_CIFAR10_CNTK.model");
-            string modelFilePath = Path.Combine(domainBaseDirectory, @"CNTK\Models\TNC_ResNet18_ImageNet_CNTK.model");
-            if (!File.Exists(modelFilePath))
-            {
-                throw new FileNotFoundException(modelFilePath, string.Format("Error: The model '{0}' does not exist. Please follow instructions in README.md in <CNTK>/Examples/Image/Classification/ResNet to create the model.", modelFilePath));
-            }
 
-            Function modelFunc = Function.Load(modelFilePath, device);
 
             // Get input variable. The model has only one single input.
             Variable inputVar = modelFunc.Arguments.Single();
@@ -68,7 +61,15 @@ namespace TNCApp_New.CNTK
             outputDataMap.Add(outputVar, null);
 
             // Start evaluation on the device
-            modelFunc.Evaluate(inputDataMap, outputDataMap, device);
+            try
+            {
+                modelFunc.Evaluate(inputDataMap, outputDataMap, device);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
 
             // Get evaluate result as dense output
             var outputVal = outputDataMap[outputVar];

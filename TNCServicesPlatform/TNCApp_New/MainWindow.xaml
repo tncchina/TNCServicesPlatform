@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        WindowStartupLocation="CenterScreen"
         xmlns:local="clr-namespace:TNCApp_New"
         xmlns:Themes="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero2" x:Class="TNCApp_New.MainWindow"
         mc:Ignorable="d"
@@ -162,40 +163,178 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <SolidColorBrush x:Key="OptionMark.Static.Background" Color="#FFFFFFFF"/>
+        <SolidColorBrush x:Key="OptionMark.Static.Border" Color="#FF707070"/>
+        <Style x:Key="OptionMarkFocusVisual">
+            <Setter Property="Control.Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Rectangle Margin="14,0,0,0" SnapsToDevicePixels="true" Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" StrokeThickness="1" StrokeDashArray="1 2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <LinearGradientBrush x:Key="CheckedBlue" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FF285AB3" Offset="0" />
+            <GradientStop Color="#FF4184EC" Offset="0.5" />
+            <GradientStop Color="#FF558BED" Offset="0.5" />
+            <GradientStop Color="#FF7DACF0" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="CheckedOrange" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFCA6A13" Offset="0" />
+            <GradientStop Color="#FFF67D0C" Offset="0.2" />
+            <GradientStop Color="#FFFE7F0C" Offset="0.2" />
+            <GradientStop Color="#FFFA8E12" Offset="0.5" />
+            <GradientStop Color="#FFFF981D" Offset="0.5" />
+            <GradientStop Color="#FFFCBC5A" Offset="1" />
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="CheckedOrangeBorder" Color="#FF8E4A1B" />
+        <SolidColorBrush x:Key="CheckedBlueBorder" Color="#FF143874" />
+        <Style x:Key="OrangeSwitchStyle" TargetType="{x:Type CheckBox}">
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}" />
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <ControlTemplate.Resources>
+                            <Storyboard x:Key="OnChecking">
+                                <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
+                                    <SplineDoubleKeyFrame KeyTime="00:00:00.1000000" Value="53" />
+                                </DoubleAnimationUsingKeyFrames>
+                            </Storyboard>
+                            <Storyboard x:Key="OnUnchecking">
+                                <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
+                                    <SplineDoubleKeyFrame KeyTime="00:00:00.1000000" Value="0" />
+                                </DoubleAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </ControlTemplate.Resources>
+                        <DockPanel x:Name="dockPanel">
+                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" ContentTemplate="{TemplateBinding ContentTemplate}" RecognizesAccessKey="True" VerticalAlignment="Center" />
+                            <Grid>
+                                <Border x:Name="BackgroundBorder" BorderBrush="#FF939393" BorderThickness="1" CornerRadius="3" Height="27" Width="94">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#FFB5B5B5" Offset="0" />
+                                            <GradientStop Color="#FFDEDEDE" Offset="0.1" />
+                                            <GradientStop Color="#FFEEEEEE" Offset="0.5" />
+                                            <GradientStop Color="#FFFAFAFA" Offset="0.5" />
+                                            <GradientStop Color="#FFFEFEFE" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse x:Name="Off" Width="14" Height="14" Stroke="#FF7A7A7A" StrokeThickness="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <Line x:Name="On" X1="0" Y1="0" X2="0" Y2="14" Stroke="#FF7A7A7A" StrokeThickness="2" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                                <Border BorderBrush="#FF939393" HorizontalAlignment="Left" x:Name="slider" Width="41" Height="27" BorderThickness="1" CornerRadius="3" RenderTransformOrigin="0.5,0.5" Margin="0">
+                                    <Border.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform ScaleX="1" ScaleY="1" />
+                                            <SkewTransform AngleX="0" AngleY="0" />
+                                            <RotateTransform Angle="0" />
+                                            <TranslateTransform X="0" Y="0" />
+                                        </TransformGroup>
+                                    </Border.RenderTransform>
+                                    <Border.Background>
+                                        <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                                            <GradientStop Color="#FFF0F0F0" Offset="0" />
+                                            <GradientStop Color="#FFCDCDCD" Offset="0.1" />
+                                            <GradientStop Color="#FFFBFBFB" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                        </DockPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard Storyboard="{StaticResource OnUnchecking}" x:Name="OnUnchecking_BeginStoryboard" />
+                                </Trigger.ExitActions>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource OnChecking}" x:Name="OnChecking_BeginStoryboard" />
+                                </Trigger.EnterActions>
+                                <Setter TargetName="On" Property="Stroke" Value="White" />
+                                <Setter TargetName="Off" Property="Stroke" Value="White" />
+                                <!-- Change Orange or Blue color here -->
+                                <Setter TargetName="BackgroundBorder" Property="Background" Value="{StaticResource CheckedOrange}" />
+                                <Setter TargetName="BackgroundBorder" Property="BorderBrush" Value="{StaticResource CheckedOrangeBorder}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <!-- ToDo: Add Style for Isenabled == False -->
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="151*"/>
-            <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="869*"/>
+            <ColumnDefinition Width="100*"/>
+            <ColumnDefinition Width="0*"/>
         </Grid.ColumnDefinitions>
-        <Grid HorizontalAlignment="Left" Height="646" VerticalAlignment="Top" Width="138" Background="#FF23A320">
-            <Button x:Name ="BtnHome" Content="Home" HorizontalAlignment="Left" Margin="0,142,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Home_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-            <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="0,142,0,0" Source="iconR/Dog House_40px.png"/>
-            <Button x:Name ="BtnUpload" Content="Upload" HorizontalAlignment="Left" Margin="0,218,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BtnUpload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
-            <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="0,218,0,0" Source="iconR/Maintenance_40px.png"/>
-        </Grid>
-        <Grid HorizontalAlignment="Left" Height="63" Margin="138,3,0,0" VerticalAlignment="Top" Width="831" Background="#FF3FCF3B" MouseLeftButtonDown="Grid_MouseLeftButtonDown" Grid.ColumnSpan="2"/>
-        <Grid HorizontalAlignment="Left" Height="589" Margin="138,57,0,0" VerticalAlignment="Top" Width="831" Background="#FFA4F5A6" Grid.ColumnSpan="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="560*"/>
-                <ColumnDefinition Width="271*"/>
-            </Grid.ColumnDefinitions>
-            <ListView x:Name="ListV" HorizontalAlignment="Left" Height="378" Margin="10,-9,0,0" VerticalAlignment="Top" Width="261" SelectionChanged="ListView_SelectionChanged" Background="{x:Null}" FontFamily="Century Gothic" Style="{DynamicResource ListViewStyle1}" Grid.Column="1" BorderBrush="{x:Null}" FontSize="18">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            <ProgressBar x:Name="UploadingBar" HorizontalAlignment="Left" Height="61" VerticalAlignment="Top" Width="831" Margin="0,528,0,0" Grid.ColumnSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Style="{DynamicResource ProgressBarStyle1}"/>
+        <Grid HorizontalAlignment="Left" Height="134" Margin="-1045,557,0,-45" VerticalAlignment="Top" Width="134"/>
+        <TextBlock HorizontalAlignment="Left" Height="57" Margin="-905,564,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="830" Foreground="#FFF9F7F7" FontFamily="Century Gothic" FontSize="48"><Run Text="TNC Prediction "/><Run Text="Console"/></TextBlock>
+        <Grid HorizontalAlignment="Left" Height="646" Margin="-1,0,0,0" VerticalAlignment="Top" Width="970" Grid.ColumnSpan="2">
+            <Image HorizontalAlignment="Left" Height="646" Margin="0,0,-14,0" VerticalAlignment="Top" Width="984" Source="Background/Picture3.jpg"/>
+            <Grid HorizontalAlignment="Left" Height="63" Margin="139,0,0,0" VerticalAlignment="Top" Width="831" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="175*"/>
+                    <ColumnDefinition Width="241*"/>
+                </Grid.ColumnDefinitions>
+            </Grid>
+            <Grid HorizontalAlignment="Left" Height="589" Margin="139,57,0,0" VerticalAlignment="Top" Width="831">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="273*"/>
+                    <RowDefinition Height="316*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="559*"/>
+                    <ColumnDefinition Width="41*"/>
+                    <ColumnDefinition Width="116*"/>
+                    <ColumnDefinition Width="60*"/>
+                    <ColumnDefinition Width="55*"/>
+                </Grid.ColumnDefinitions>
+                <ProgressBar x:Name="UploadingBar" HorizontalAlignment="Left" Height="61" VerticalAlignment="Top" Width="831" Margin="0,255,0,0" Grid.ColumnSpan="5" Background="{x:Null}" BorderBrush="{x:Null}" Style="{DynamicResource ProgressBarStyle1}" Grid.Row="1">
+                    <ProgressBar.Foreground>
+                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                            <GradientStop Color="Black" Offset="0"/>
+                            <GradientStop Color="#FF1881FF" Offset="1"/>
+                        </LinearGradientBrush>
+                    </ProgressBar.Foreground>
+                </ProgressBar>
 
-            <Image x:Name="pictureBox1" HorizontalAlignment="Left" Height="369" VerticalAlignment="Top" Width="560"/>
-            <TextBox x:Name="richTextBox1" HorizontalAlignment="Left" Height="215" Margin="0,374,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" FontSize="36" FontFamily="Century Gothic" Background="{x:Null}" Grid.ColumnSpan="2" BorderBrush="{x:Null}"/>
+                <Image x:Name="pictureBox1" HorizontalAlignment="Left" Height="368" VerticalAlignment="Top" Width="560" Margin="-1,-9,0,0" Grid.RowSpan="2"/>
+                <TextBlock x:Name="richTextBox1" HorizontalAlignment="Left" Height="161" Margin="0,155,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" FontSize="36" FontFamily="Century Gothic" Background="{x:Null}" Grid.ColumnSpan="5"  Grid.Row="1" Foreground="White" />
+                <ListBox x:Name="ListV" HorizontalAlignment="Left" Height="374" Margin="1,0,0,0" VerticalAlignment="Top" Width="271" Grid.ColumnSpan="4" Grid.Column="1" Grid.RowSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White" FontFamily="ListV" FontSize="18" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseLeftButtonDown="ListV_MouseLeftButtonDown" PreviewMouseLeftButtonDown="ListV_PreviewMouseLeftButtonDown"/>
+                <TextBox x:Name="ConfirmTextBox" HorizontalAlignment="Left" Height="38" Margin="10,268,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="289" Foreground="#FFF6F4F4" Background="{x:Null}" FontSize="25" Visibility="Hidden"/>
+                <Button x:Name="ConfirmButton" Content="Submit" HorizontalAlignment="Left" Height="38" Margin="337,268,0,0" Grid.Row="1" VerticalAlignment="Top" Width="162" Background="{x:Null}" Foreground="#FFF8F7F7" FontSize="20" Click="ConfirmButton_Click" Visibility="Hidden"/>
+                <TextBlock x:Name="FolderProgressBox" HorizontalAlignment="Left" Height="69" Margin="0,86,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="559"  FontFamily="Century Gothic" FontSize="36" Background="{x:Null}" Foreground="#FFFAF8F8" />
+            </Grid>
+            <Grid HorizontalAlignment="Left" Height="646" VerticalAlignment="Top" Width="139">
+                <Button x:Name ="BtnHome" Content="Home" HorizontalAlignment="Left" Margin="0,96,-9,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Home_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="0,96,0,0" Source="iconR/Dog House_40px.png"/>
+                <Button x:Name ="BtnUpload" Content="Predict" Margin="0,274,0,0" VerticalAlignment="Top" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BtnUpload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Image HorizontalAlignment="Left" Height="32" VerticalAlignment="Top" Width="32" Margin="0,144,0,0" Source="iconR/Globe Earth_40px.png"/>
+                <Button x:Name ="ConfirmBtn" Content="Confirm" HorizontalAlignment="Left" Margin="0,333,-9,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Confirm_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <Button x:Name ="ReportsBtn" Content="View Reports" HorizontalAlignment="Left" Margin="0,397,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Reports_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <TextBlock x:Name="TextLineBox" HorizontalAlignment="Left" Height="24" Margin="37,152,-28,0" TextWrapping="Wrap" Text="Offline" VerticalAlignment="Top" Width="120"  FontSize="16" Background="{x:Null}" Foreground="White"  FontFamily="Century Gothic" />
+                <Button x:Name ="BrowseBtn" Content="Browse" HorizontalAlignment="Left" Margin="1,365,0,0" VerticalAlignment="Top" Width="137" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="BrowseBtn_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+                <CheckBox x:Name="Continuation" Content="" HorizontalAlignment="Left" Margin="9,237,0,0" VerticalAlignment="Top" Style="{DynamicResource OrangeSwitchStyle}" RenderTransformOrigin="0.412,1.861" Checked="Continuation_Checked" Unchecked="Continuation_Unchecked"/>
+                <TextBlock x:Name="ContinuationBox" HorizontalAlignment="Left" Height="24" Margin="10,208,0,0" TextWrapping="Wrap" Text="Continue Off" VerticalAlignment="Top" Width="128"  FontSize="16" Background="{x:Null}" Foreground="White"  FontFamily="Century Gothic" />
+                <CheckBox Content="" HorizontalAlignment="Left" Margin="9,176,0,0" VerticalAlignment="Top" Style="{DynamicResource OrangeSwitchStyle}" RenderTransformOrigin="0.412,1.861" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                <Button x:Name ="UploadOnlyBtn" Content="Upload" HorizontalAlignment="Left" Margin="0,306,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="Upload_Click" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
+            </Grid>
         </Grid>
-        <Grid HorizontalAlignment="Left" Height="134" Margin="-1,3,0,0" VerticalAlignment="Top" Width="134"/>
-        <TextBlock HorizontalAlignment="Left" Height="57" Margin="138,3,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" Foreground="#FFF9F7F7" FontFamily="Century Gothic" FontSize="48" Grid.ColumnSpan="2"><Run Text="TNC Prediction "/><Run Text="Console"/></TextBlock>
 
     </Grid>
+
+
 </Window>
     
 

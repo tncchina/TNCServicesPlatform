@@ -40,7 +40,7 @@ namespace TNCImagePredictionConsole
             {
                 var client = new HttpClient();
                 AnimalImage image = new AnimalImage();
-                image.ImageName = Path.GetFileNameWithoutExtension(imagePath);
+                image.ImageName = Path.GetFileName(imagePath);
 
                 Stopwatch watch = new Stopwatch();
                 watch.Start();
