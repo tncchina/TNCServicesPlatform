@@ -65,6 +65,7 @@ namespace TNCApp_New
         {
             
             InitializeComponent();
+            //ConfidenceBarText.Text = "Rate: " + ConfidenceBar.Value + "%";
             IndexCamera = 0;
             CameraLocations = new List<string>();
             CameraNumbers = new List<string>();
@@ -924,5 +925,12 @@ namespace TNCApp_New
             StartPrediction1();
             UploadOnly = false;
         }
+
+
+        private void ConfidenceBar_ValueChanged_1(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            this.ConfidenceRate = (int)ConfidenceBar.Value;
+        }
+
     }
 }

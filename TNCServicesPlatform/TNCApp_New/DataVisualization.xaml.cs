@@ -26,7 +26,7 @@ namespace TNCApp_New
         public DataVisualization(IDictionary<string, int> dict)
         {
             InitializeComponent();
-            var ValueX = new ChartValues<double>();
+            var ValueX = new ChartValues<int>();
             var ValueY = new List<String>();
 
             foreach (KeyValuePair<string, int> entry in dict)
