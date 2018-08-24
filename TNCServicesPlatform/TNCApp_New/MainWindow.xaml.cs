@@ -13,6 +13,7 @@ using System.Deployment.Application;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
+using System.Web.Script.Serialization;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -377,8 +378,8 @@ namespace TNCApp_New
                 else
             }*/
 
-            List<String> items = new List<String>();
-            double i = 0;
+            //List<String> items = new List<String>();
+            int i = 0;
             int totalFilesNum = 0;
             ImagePredictionResultModel result;
             var csv = new StringBuilder();
@@ -475,25 +476,25 @@ namespace TNCApp_New
             }
 
 
-
-        foreach (String imagePath in imagePaths)
+        List<int>indexs = new List<int>();
+        foreach (String imagePath1 in imagePaths)
             {
-                if (!File.Exists(imagePath))
+                if (!File.Exists(imagePath1))
                 {
 
                 }
-                else if (Path.GetExtension(imagePath) == ".jpg" || Path.GetExtension(imagePath) == ".JPG")
+                else if (Path.GetExtension(imagePath1) == ".jpg" || Path.GetExtension(imagePath1) == ".JPG")
                 {
                     //this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
                     if (this.StateLocal != true)
                     {
-                        AnimalImage image =  UploadImage(imagePath);
+                        AnimalImage image =  UploadImage(imagePath1);
                         //this.richTextBox1.Text = image.UploadBlobSASUrl;
                         // 2. image classification
                         if (UploadOnly)
                         {
                             i++;
-                            this.UploadingBar.Value = Math.Round(i / (totalFilesNum) * 100);
+                            this.UploadingBar.Value = Math.Round((double)i / (totalFilesNum) * 100);
                             continue;
                         }
                         string imageUrl = $"https://tncstorage4test.blob.core.windows.net/animalimages/{image.ImageBlob}";
@@ -506,7 +507,7 @@ namespace TNCApp_New
                     {
                         try
                         {
-                            result = LocalPrediction.EvaluateCustomDNN(imagePath, modelFunc);
+                            result = LocalPrediction.EvaluateCustomDNN(imagePath1, modelFunc);
                         }
                         catch (Exception e)
                         {
@@ -518,26 +519,28 @@ namespace TNCApp_New
                     ConfirmPredictions.Add(new ConfirmPredictionModel()
                     {
                         IsPhoto = true,
-                        FilePath = imagePath,
+                        FilePath = imagePath1,
                         Predictions = result.Predictions
                     });
+                    indexs.Add(i);
                 }
                 else
                 {
                     ConfirmPredictions.Add(new ConfirmPredictionModel()
                     {
                         IsPhoto = false,
-                        FilePath = imagePath
+                        FilePath = imagePath1
                     });
+                    indexs.Add(i);
                 }
-
+                
                 i++;
-                this.UploadingBar.Value = Math.Round(i / (totalFilesNum) * 100);
+                this.UploadingBar.Value = Math.Round((double)i / (totalFilesNum) * 100);
                 AllowUIToUpdate();
 
             }
             if(UploadOnly) return;
-            var newdir = processDirctory(ConfirmFolder,Pathname, RootProcessFolder);
+/*            var newdir = processDirctory(ConfirmFolder,Pathname, RootProcessFolder);
             var path = Path.Combine(newdir, positionNumber + ".tnc");
             bool append = false;
             using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
@@ -548,7 +551,136 @@ namespace TNCApp_New
 
             this.UploadingBar.Value = 100;
             this.richTextBox1.Text = ("Done");
-            File.WriteAllText(Path.Combine(Path.GetDirectoryName(Pathname), "done.txt"), "", Encoding.Default);
+            File.WriteAllText(Path.Combine(Path.GetDirectoryName(Pathname), "done.txt"), "", Encoding.Default);*/
+
+
+
+            i = 1;
+            int workDays = 1;
+            var file1 = new StreamReader(Pathname, Encoding.Default).ReadToEnd();
+            var lines1 = file1.Split('\n');
+            var lastWorkDay = cortime;
+            IDictionary<string, int> dict = new Dictionary<string, int>();
+            //var csv = new StringBuilder();
+            List<String> items = new List<String>();
+            string newLine;
+            if (Path.GetExtension(Pathname) != ".csv")
+            {
+                newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注,confirmed");
+                
+
+
+            }
+            else
+            {
+                newLine = lines1[0].Replace("\r",",prediction,confirmed\r");
+            }
+            csv.AppendLine(newLine);
+
+            string folderPath = Path.GetDirectoryName(ConfirmPredictions[0].FilePath);
+
+            string speciesName = "";
+            var lastPhotoSpecie = speciesName;
+            string firstDetected = "";
+            string speciesNamef = "";
+            String imagePath = "";
+            var newdir = processDirctory(ConfirmFolder, ConfirmPredictions[0].FilePath, RootProcessFolder);
+            string pathString = System.IO.Path.Combine(newdir, positionNumber);
+            System.IO.Directory.CreateDirectory(pathString);
+            var OriginalTime = File.GetLastWriteTime(ConfirmPredictions[0].FilePath);
+            foreach (var model in ConfirmPredictions)
+            {
+
+                imagePath = model.FilePath;
+                if (!File.Exists(imagePath))
+                {
+                    continue;
+                }
+                var shootingDate = (cortime + (File.GetLastWriteTime(imagePath) - OriginalTime)).Date;
+                var shootingTime = (cortime + (File.GetLastWriteTime(imagePath) - OriginalTime)).ToShortTimeString();
+                var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
+                var fileExt = Path.GetExtension(imagePath);
+                workDays = (shootingDate - lastWorkDay).Days;
+                if (model.IsPhoto == true)
+                {
+                    Bitmap bmp = new Bitmap(imagePath);
+                    bmp.Save($"{Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
+                    var sorted = model.Predictions.OrderByDescending(f => f.Probability);
+                    //this is the part for the threshhold
+                    int CorrectedIndex = 0;
+                    speciesName = (new JavaScriptSerializer().Serialize(sorted.ToList())).Replace(",","|");
+ 
+                    firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
+                    lastPhotoSpecie = speciesName;
+                    speciesNamef = speciesName;
+                }
+                else if (fileExt == ".AVI" || fileExt == ".avi")
+                {
+                    if (!File.Exists(Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}")))
+                    {
+                        File.Copy(imagePath, Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}"));
+                    }
+
+                    speciesNamef = "";
+                    firstDetected = "";
+                }
+                else
+                {
+                    continue;
+                }
+                if(Path.GetExtension(Pathname) != ".csv")
+                {
+                    newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15}",
+                        $"{positionNumber}-{i.ToString("D4")}",
+                        fileNameNoext,
+                        fileExt,
+                        positionNumber,
+                        cameraNumber,
+                        positionNumber,
+                        shootingDate,
+                        shootingTime,
+                        workDays,
+                        "Unkown Type",
+                        speciesNamef,
+                        "Unknown number of animal",
+                        "Unknown gender",
+                        firstDetected,
+                        "NAN",
+                        "no"
+                    );
+                }
+                else
+                {
+                    newLine = lines1[indexs[i-1]+1].Replace("\r", $",{speciesName},no\r") ;
+                }
+                csv.AppendLine(newLine);
+                this.Dispatcher.Invoke(() =>
+                {
+                    double a = i;
+                    this.UploadingBar.Value = a / ConfirmPredictions.Count * 100;
+                });
+                i++;
+            }
+
+
+            //var datadir = processDirctory(DataVisFolder, ConfirmPredictions[0].FilePath, RootProcessFolder);
+            File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
+
+            File.WriteAllText(Path.Combine(pathString, $"{positionNumber}.csv"), csv.ToString(), Encoding.Default);
+            this.Dispatcher.Invoke(() => {
+                this.UploadingBar.Value = 100;
+                this.richTextBox1.Text = ("Done");
+                this.ConfirmButton.Visibility = Visibility.Hidden;
+                this.ConfirmTextBox.Visibility = Visibility.Hidden;
+                var path = Path.Combine(pathString, positionNumber + ".data");
+                var append = false;
+                using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
+                {
+                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    binaryFormatter.Serialize(stream, dict);
+                }
+
+            });
             return;
 
         }
