@@ -287,15 +287,7 @@ namespace TNCApp_New
         void confrim_photos(bool isThreshhold)
         {
             OpenFileDialog confirmdlg = new OpenFileDialog();
-            if (isThreshhold)
-            {
-                confirmdlg.InitialDirectory = ConfirmFolder;
-            }
-            else
-            {
-                confirmdlg.InitialDirectory = BrowseFolder;
-            }
-            confirmdlg.DefaultExt = ".tnc";
+            confirmdlg.DefaultExt = ".csv";
             confirmdlg.ShowDialog();
 
             var confirmpath = confirmdlg.FileName;
@@ -305,25 +297,26 @@ namespace TNCApp_New
                 return;
             }
 
-            switch (Path.GetExtension(confirmpath))
-            {
-                case ".tnc":
-                    using (Stream stream = File.Open(confirmpath, FileMode.Open))
-                    {
-                        var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                        var nice = (Tuple<string, string, List<ConfirmPredictionModel>, string,DateTime>)binaryFormatter.Deserialize(stream);
-                        var cameraName = nice.Item1;
-                        var folderName = nice.Item2;
-                        var confirmPredictions = nice.Item3;
-                        var rootdir = nice.Item4;
-                        var correctTime = nice.Item5;
-                        Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold, correctTime,confirmpath); });
-                    }
+            //switch (Path.GetExtension(confirmpath))
+            //{
+            //    case ".tnc":
+            //        using (Stream stream = File.Open(confirmpath, FileMode.Open))
+            //        {
+            //            var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+            //            var nice = (Tuple<string, string, List<ConfirmPredictionModel>, string,DateTime>)binaryFormatter.Deserialize(stream);
+            //            var cameraName = nice.Item1;
+            //            var folderName = nice.Item2;
+            //            var confirmPredictions = nice.Item3;
+            //            var rootdir = nice.Item4;
+            //            var correctTime = nice.Item5;
+            //            Task mytask1 = Task.Run(() => { GenerateCSV1(cameraName, folderName, confirmPredictions, rootdir, isThreshhold, correctTime,confirmpath); });
+            //        }
 
+            Task mytask1 = Task.Run(() => { GenerateCSV1( isThreshhold,confirmpath); });
+            //        break;
 
-                    break;
+            //}
 
-            }
             //File.Move(confirmpath,Path.Combine(BrowseFolder,Path.GetDirectoryName(confirmpath)));
 
         }
@@ -340,24 +333,77 @@ namespace TNCApp_New
         {
             this.FolderProgressBox.Text = "";
             OpenFileDialog datadlg = new OpenFileDialog();
-            datadlg.InitialDirectory = DataVisFolder;
-            datadlg.DefaultExt = ".data";
+            datadlg.InitialDirectory = ConfirmFolder;
+            datadlg.DefaultExt = ".csv";
             datadlg.ShowDialog();
             if (!File.Exists(datadlg.FileName))
             {
                 richTextBox1.Text = "not vaild file";
                 return;
             }
-            using (Stream stream = File.Open(datadlg.FileName, FileMode.Open))
+            int i = 0;
+            IDictionary<string, int> dict = new Dictionary<string, int>();
+            IDictionary<string, int> dictratio = new Dictionary<string, int>();
+            dictratio.Add("correct",0);
+            dictratio.Add("wrong",0);
+            IDictionary<string, int> dictAttribute = new Dictionary<string, int>();
+            var reader = new StreamReader(datadlg.FileName, Encoding.Default);
+            var file = reader.ReadToEnd();
+            reader.Close();
+            var lines = file.Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            var attributes = lines[0].Split(',');
+            attributes[attributes.Length - 1] = attributes[attributes.Length - 1].Replace("\r", "");
+            foreach (var attribute in attributes)
             {
-                var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                var nice = (IDictionary<string,int>)binaryFormatter.Deserialize(stream);
-                DataVisualization div = new DataVisualization(nice);
-                // Configure the dialog box
-                div.Owner = this;
-                // Open the dialog box modally 
-                div.Show();
+                dictAttribute.Add(attribute, i);
+                i++;
             }
+            i = 0;
+            foreach (var line in lines)
+            {
+                
+                if (i == 0)
+                {
+                    i++;
+                    continue;
+                }
+
+                var elements = line.Split(',');
+                if (elements[dictAttribute["文件格式"]] != "JPG")
+                {
+                    continue;
+                }
+                var speciesName = elements[dictAttribute["物种名称"]];
+                var speciesNameai = elements[dictAttribute["aitag"]];
+                if (speciesName=="")
+                {
+                    speciesName = "unassigned";
+                }
+                if (dict.ContainsKey(speciesName))
+                {
+                    dict[speciesName]++;
+                }
+                else
+                {
+                    dict.Add(speciesName, 1);
+                }
+
+                if (speciesName== speciesNameai)
+                {
+                    dictratio["correct"]++;
+                }
+                else
+                {
+                    dictratio["wrong"]++;
+                }
+
+            }
+
+            DataVisualization div = new DataVisualization(dict,dictratio);
+            // Configure the dialog box
+            div.Owner = this;
+            // Open the dialog box modally 
+            div.Show();
         }
 
         async void singleProcess(List<string> imagePaths)
@@ -439,7 +485,17 @@ namespace TNCApp_New
             else if (Path.GetExtension(Pathname) == ".csv")
             {
                 imagePaths = new List<string>();
-                var file = new StreamReader(Pathname, Encoding.Default).ReadToEnd();
+                string file;
+                try
+                {
+                    file = new StreamReader(Pathname, Encoding.Default).ReadToEnd();
+                }
+                catch (Exception e)
+                {
+                    this.richTextBox1.Text = "could not open the csv file, because it is opened else where";
+                    return;
+                }
+                
                 var lines = file.Split('\n');
                 var values = lines[1].Split(',');
                 positionNumber = values[3];
@@ -557,8 +613,18 @@ namespace TNCApp_New
 
             i = 1;
             int workDays = 1;
-            var file1 = new StreamReader(Pathname, Encoding.Default).ReadToEnd();
-            var lines1 = file1.Split('\n');
+            string file1;
+            try
+            {
+                 file1 = new StreamReader(Pathname, Encoding.Default).ReadToEnd();
+            }
+            catch (Exception e)
+            {
+                richTextBox1.Text = "could not open the file, becasue it is opend else where";
+                return;
+            }
+            
+            var lines1 = file1.Split("\r\n".ToCharArray(),StringSplitOptions.RemoveEmptyEntries);
             var lastWorkDay = cortime;
             IDictionary<string, int> dict = new Dictionary<string, int>();
             //var csv = new StringBuilder();
@@ -566,14 +632,15 @@ namespace TNCApp_New
             string newLine;
             if (Path.GetExtension(Pathname) != ".csv")
             {
-                newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注,confirmed");
+                newLine = string.Format("文件编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注,aitag,prediction,confirmed");
                 
 
 
             }
             else
             {
-                newLine = lines1[0].Replace("\r",",prediction,confirmed\r");
+                lines1[0] = lines1[0].Replace("\n", "");
+                newLine = lines1[0].Replace("\r","")+",aitag,prediction,confirmed";
             }
             csv.AppendLine(newLine);
 
@@ -586,6 +653,7 @@ namespace TNCApp_New
             String imagePath = "";
             var newdir = processDirctory(ConfirmFolder, ConfirmPredictions[0].FilePath, RootProcessFolder);
             string pathString = System.IO.Path.Combine(newdir, positionNumber);
+            string speciesConfig;
             System.IO.Directory.CreateDirectory(pathString);
             var OriginalTime = File.GetLastWriteTime(ConfirmPredictions[0].FilePath);
             foreach (var model in ConfirmPredictions)
@@ -604,11 +672,15 @@ namespace TNCApp_New
                 if (model.IsPhoto == true)
                 {
                     Bitmap bmp = new Bitmap(imagePath);
-                    bmp.Save($"{Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
+                    var photoPath = (Path.GetExtension(Pathname) != ".csv")
+                        ? $"{positionNumber}-{i.ToString("D4")}{fileExt}"
+                        : Path.GetFileName(imagePath);
+                    bmp.Save($"{Path.Combine(pathString, photoPath)}", System.Drawing.Imaging.ImageFormat.Jpeg);
                     var sorted = model.Predictions.OrderByDescending(f => f.Probability);
                     //this is the part for the threshhold
                     int CorrectedIndex = 0;
-                    speciesName = (new JavaScriptSerializer().Serialize(sorted.ToList())).Replace(",","|");
+                    speciesName = sorted.ToList()[0].Tag;
+                    speciesConfig = (new JavaScriptSerializer().Serialize(sorted.ToList())).Replace(",","|");
  
                     firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
                     lastPhotoSpecie = speciesName;
@@ -621,6 +693,7 @@ namespace TNCApp_New
                         File.Copy(imagePath, Path.Combine(pathString, $"{positionNumber}-{i.ToString("D4")}{fileExt}"));
                     }
 
+                    speciesConfig = "";
                     speciesNamef = "";
                     firstDetected = "";
                 }
@@ -630,28 +703,31 @@ namespace TNCApp_New
                 }
                 if(Path.GetExtension(Pathname) != ".csv")
                 {
-                    newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15}",
+                    newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17}",
                         $"{positionNumber}-{i.ToString("D4")}",
                         fileNameNoext,
-                        fileExt,
+                        fileExt.Replace(".", ""),
                         positionNumber,
                         cameraNumber,
                         positionNumber,
                         shootingDate,
                         shootingTime,
                         workDays,
-                        "Unkown Type",
-                        speciesNamef,
-                        "Unknown number of animal",
-                        "Unknown gender",
+                        "",
+                        "",
+                        "",
+                        "",
                         firstDetected,
-                        "NAN",
+                        "",
+                        speciesNamef,
+                        speciesConfig,
                         "no"
                     );
                 }
                 else
                 {
-                    newLine = lines1[indexs[i-1]+1].Replace("\r", $",{speciesName},no\r") ;
+                    lines1[indexs[i - 1] + 1]=lines1[indexs[i - 1] + 1].Replace("\r", "");
+                    newLine = lines1[indexs[i-1]+1].Replace("\n","")+ $",{speciesNamef},{speciesConfig},no" ;
                 }
                 csv.AppendLine(newLine);
                 this.Dispatcher.Invoke(() =>
@@ -664,21 +740,22 @@ namespace TNCApp_New
 
 
             //var datadir = processDirctory(DataVisFolder, ConfirmPredictions[0].FilePath, RootProcessFolder);
-            File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
+            try
+            {
+                File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
+                File.WriteAllText(Path.Combine(pathString, $"{positionNumber}.csv"), csv.ToString(), Encoding.Default);
+            }
+            catch (Exception e)
+            {
+                richTextBox1.Text = "could not open the file, becasue it is opend else where";
+                return;
+            }
 
-            File.WriteAllText(Path.Combine(pathString, $"{positionNumber}.csv"), csv.ToString(), Encoding.Default);
             this.Dispatcher.Invoke(() => {
                 this.UploadingBar.Value = 100;
                 this.richTextBox1.Text = ("Done");
                 this.ConfirmButton.Visibility = Visibility.Hidden;
                 this.ConfirmTextBox.Visibility = Visibility.Hidden;
-                var path = Path.Combine(pathString, positionNumber + ".data");
-                var append = false;
-                using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
-                {
-                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                    binaryFormatter.Serialize(stream, dict);
-                }
 
             });
             return;
@@ -867,53 +944,92 @@ namespace TNCApp_New
         }
         
 
-        private void GenerateCSV1(string cameraNumber, string cameraLocation, List<ConfirmPredictionModel> models, string Rootdir,bool is_threshhold,DateTime correctedTime , string originalLocation)
+        private void GenerateCSV1(bool is_threshhold, string originalLocation)
         {
-            int i = 0;
+            
             int workDays = 1;
+            int i = 0;
+            //IDictionary<string, int> dict = new Dictionary<string, int>();
+            IDictionary<string, int> dictAttribute = new Dictionary<string, int>();
+            StreamReader reader;
+            try
+            {
+                 reader = new StreamReader(originalLocation, Encoding.Default);
+            }
+            catch (Exception e)
+            {
+                richTextBox1.Text = "could not onpen the csv,becuase it is already opened somewhere else";
 
-            var lastWorkDay = correctedTime;
-            IDictionary<string, int> dict = new Dictionary<string, int>();
+                return;
+            }
+           
+            var file = reader.ReadToEnd();
+            reader.Close();
+            var lines = file.Split("\r\n".ToCharArray(),StringSplitOptions.RemoveEmptyEntries);
+            var attributes = lines[0].Split(',');
+            attributes[attributes.Length - 1] = attributes[attributes.Length - 1].Replace("\r", "");
+            foreach (var attribute in attributes)
+            {
+                dictAttribute.Add(attribute,i);
+                i++;
+            }
+
+
+           
             var csv = new StringBuilder();
-            List<String> items = new List<String>();
-            var newLine = string.Format("编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注");
-            csv.AppendLine(newLine);
-            string folderPath = Path.GetDirectoryName(models[0].FilePath);
-
+            
+            
             string speciesName = "";
             var lastPhotoSpecie = speciesName;
             string firstDetected = "";
             string speciesNamef = "";
-            string imagePath="";
-            var newdir = processDirctory(GenerateFolder,models[0].FilePath, Rootdir);
-            string pathString = System.IO.Path.Combine(newdir, cameraLocation);
-            System.IO.Directory.CreateDirectory(pathString);
-            var OriginalTime = File.GetLastWriteTime(models[0].FilePath);
-            foreach (var model in models)
+            string cameraLocation = "";
+
+            csv.AppendLine(lines[0].Replace("\r", "").Replace("\n", ""));
+
+
+            
+            i = 0;
+            foreach (var line in lines)
             {
 
-                imagePath = model.FilePath;
-                if (!File.Exists(imagePath))
+                if (i == 0)
+                {
+                    i++;
+                    continue;
+                }
+                var elements = lines[i].Split(',');
+                if (elements.Length < 3)
                 {
                     continue;
                 }
-                var shootingDate = (correctedTime+(File.GetLastWriteTime(imagePath)- OriginalTime)).Date;
-                var shootingTime = (correctedTime + (File.GetLastWriteTime(imagePath) - OriginalTime)).ToShortTimeString();
-                var fileNameNoext = Path.GetFileNameWithoutExtension(imagePath);
-                var fileExt = Path.GetExtension(imagePath);
-                workDays = (shootingDate - lastWorkDay).Days;
-                if (model.IsPhoto == true)
+                var predictionIndex = elements[dictAttribute["prediction"]];
+                //imagePath = model.FilePath;
+                //if (!File.Exists(imagePath))
+                //{
+                //    continue;
+                //}
+                
+                var fileNameNoext = elements[dictAttribute["文件编号"]];
+                var fileExt = elements[dictAttribute["文件格式"]];
+                var prediction = elements[dictAttribute["prediction"]];
+                var imagePath = Path.Combine(Path.GetDirectoryName(originalLocation) , $"{fileNameNoext}.{fileExt}");
+                //workDays = (shootingDate - lastWorkDay).Days;
+                List<Prediction> sorted = JsonConvert.DeserializeObject<List<Prediction>>(prediction.Replace("|",","));
+                if (fileExt == "JPG")
                 {
-                    Bitmap bmp = new Bitmap(imagePath);
-                    bmp.Save($"{Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}")}", System.Drawing.Imaging.ImageFormat.Jpeg);
-                    var sorted = model.Predictions.OrderByDescending(f => f.Probability);
+                    if (IsContinue&& elements[dictAttribute["confirmed"]] == "yes")
+                    {
+                        csv.AppendLine(line);
+                        continue;
+                    }
                     //this is the part for the threshhold
                     int CorrectedIndex = 0;
                     speciesName = sorted.ToList()[0].Tag;
                     if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate||is_threshhold==false)
                     {
 
-                        items = new List<string>();
+                        var items = new List<string>();
                         foreach (var pre in sorted)
                         {
                             // this.richTextBox1.Text += pre.Tag + ":  " + pre.Probability.ToString("P", CultureInfo.InvariantCulture) + "\n";
@@ -951,85 +1067,53 @@ namespace TNCApp_New
                         });
 
                     }
-                    firstDetected = (speciesName == lastPhotoSpecie) ? "NO" : "YES";
+
+                    elements[dictAttribute["confirmed"]] = "yes";
+                    firstDetected = (speciesName == lastPhotoSpecie) ? "否" : "是";
                     lastPhotoSpecie = speciesName;
                     speciesNamef = speciesName;
-                }
-                else if(fileExt == ".AVI"||fileExt==".avi")
-                {
-                    if(!File.Exists(Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}")))
+                    //elements[dictAttribute["aitag"]] = speciesNamef;
+                    if (elements[dictAttribute["物种名称"]] == "")
                     {
-                        File.Copy(imagePath, Path.Combine(pathString, $"{cameraLocation}-{i.ToString("D4")}{fileExt}"));
+                        elements[dictAttribute["物种名称"]] = speciesNamef;
                     }
-                    
-                    speciesNamef = "";
-                    firstDetected = "";
+                    elements[dictAttribute["独立探测首张"]] = firstDetected;
+                    var new_line = String.Join(",",elements);
+                    csv.AppendLine(new_line.Replace("\r","").Replace("\n",""));
                 }
                 else
                 {
+                    csv.AppendLine(line.Replace("\r", "").Replace("\n", ""));
+                    i++;
                     continue;
                 }                
 
-                newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14}",
-                    $"{cameraLocation}-{i.ToString("D4")}",
-                    fileNameNoext,
-                    fileExt,
-                    cameraLocation,
-                    cameraNumber,
-                    cameraLocation,
-                    shootingDate,
-                    shootingTime,
-                    workDays,
-                    "Unkown Type",
-                    speciesNamef,
-                    "Unknown number of animal",
-                    "Unknown gender",
-                    firstDetected,
-                    "NAN"
-                );
-                if (dict.ContainsKey(speciesName))
-                {
-                    dict[speciesName]++;
-                }
-                else
-                {
-                    dict.Add(speciesName, 1);
-                }
 
-                
-                csv.AppendLine(newLine);
                 this.Dispatcher.Invoke(() =>
                 {
                     double a = i;
-                    this.UploadingBar.Value = a / models.Count *100;
+                    this.UploadingBar.Value = a / (lines.Length-1) *100;
                 });
                     i++;
             }
 
+            cameraLocation = (lines[1].Split(',')[dictAttribute["布设点位编号"]]);
 
-            var datadir = processDirctory(DataVisFolder, models[0].FilePath, Rootdir);
-            File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
+            //File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
             
-            File.WriteAllText(Path.Combine(pathString, $"{cameraLocation}.csv"), csv.ToString(), Encoding.Default);
+            File.WriteAllText(originalLocation, csv.ToString(), Encoding.Default);
             this.Dispatcher.Invoke(() => {
                 this.UploadingBar.Value = 100;
                 this.richTextBox1.Text = ("Done");
                 this.ConfirmButton.Visibility = Visibility.Hidden;
                 this.ConfirmTextBox.Visibility = Visibility.Hidden;
-                var path = Path.Combine(datadir, cameraLocation + ".data");
-                var append = false;
-                using (Stream stream = File.Open(path, append ? FileMode.Append : FileMode.Create))
-                {
-                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-                    binaryFormatter.Serialize(stream, dict);
-                }
 
             });
-            if (is_threshhold)
-            {
-                var browse = processDirctory(BrowseFolder, models[0].FilePath, Rootdir);
-                File.Move(originalLocation, Path.Combine(browse, $"{cameraLocation}.tnc"));
-            }
+            //if (is_threshhold)
+            //{
+            //    var browse = processDirctory(BrowseFolder, models[0].FilePath, Rootdir);
+            //    File.Move(originalLocation, Path.Combine(browse, $"{cameraLocation}.tnc"));
+            //}
             return;
         }
 

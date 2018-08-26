@@ -7,15 +7,23 @@
         xmlns:local="clr-namespace:TNCApp_New"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
-        Title="DataVisualization" Height="450" Width="800">
+        d:DesignHeight="300" d:DesignWidth="500" 
+        d:DataContext="{d:DesignInstance local:DataVisualization}"
+        Title="DataVisualization" Height="900" Width="800">
     <Grid>
-        <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="Left">
-            <lvc:CartesianChart.AxisX>
-                <lvc:Axis Title="Species" Labels="{Binding Labels}"></lvc:Axis>
-            </lvc:CartesianChart.AxisX>
-            <lvc:CartesianChart.AxisY>
-                <lvc:Axis Title="Amount" LabelFormatter="{Binding Formatter}"></lvc:Axis>
-            </lvc:CartesianChart.AxisY>
-        </lvc:CartesianChart>
+        <Grid HorizontalAlignment="Left" Height="450" Margin="0,0,0,0" VerticalAlignment="Top" Width="800">
+            <lvc:CartesianChart Series="{Binding SeriesCollection}" LegendLocation="Left" Margin="10,0,-5,0">
+                <lvc:CartesianChart.AxisX>
+                    <lvc:Axis Title="Species" Labels="{Binding Labels}"/>
+                </lvc:CartesianChart.AxisX>
+                <lvc:CartesianChart.AxisY>
+                    <lvc:Axis Title="Amount" LabelFormatter="{Binding Formatter}"/>
+                </lvc:CartesianChart.AxisY>
+            </lvc:CartesianChart>
+        </Grid>
+        <Grid HorizontalAlignment="Left" Height="422" Margin="0,450,0,0" VerticalAlignment="Bottom" Width="800">
+            <lvc:PieChart LegendLocation="Bottom" DataClick="Chart_OnDataClick" Series="{Binding SeriesCollection1}" Hoverable="False" DataTooltip="{x:Null}">
+            </lvc:PieChart>
+        </Grid>
     </Grid>
 </Window>

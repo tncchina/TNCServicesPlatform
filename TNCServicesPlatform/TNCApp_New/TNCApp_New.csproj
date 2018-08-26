@@ -200,11 +200,18 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="PercentRateDataxaml.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\ConfirmPredictionModel.cs" />
     <Compile Include="Models\ImagePredictionResultModel.cs" />
     <Compile Include="Models\Prediction.cs" />
+    <Compile Include="PercentRateDataxaml.xaml.cs">
+      <DependentUpon>PercentRateDataxaml.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -218,43 +225,41 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Content Include="Cntk.Core-2.5.1.dll">
+    <None Include="Cntk.Core-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="libiomp5md.dll" />
-    <Content Include="mkldnn.dll" />
-    <Content Include="mklml.dll" />
+    </None>
+    <None Include="libiomp5md.dll" />
+    <None Include="mkldnn.dll" />
+    <None Include="mklml.dll" />
     <Resource Include="NatureConservancyIcon.ico" />
-    <Content Include="zip.dll" />
-    <Content Include="zlib.dll" />
+    <None Include="zip.dll" />
+    <None Include="zlib.dll" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Content Include="Cntk.Composite-2.5.1.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <None Include="Cntk.Composite-2.5.1.dll" />
     <Content Include="Cntk.Core.CSBinding-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Cntk.Deserializers.Binary-2.5.1.dll">
+    <None Include="Cntk.Deserializers.Binary-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Cntk.Deserializers.HTK-2.5.1.dll">
+    </None>
+    <None Include="Cntk.Deserializers.HTK-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Cntk.Deserializers.Image-2.5.1.dll">
+    </None>
+    <None Include="Cntk.Deserializers.Image-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Cntk.Deserializers.TextFormat-2.5.1.dll">
+    </None>
+    <None Include="Cntk.Deserializers.TextFormat-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Cntk.Math-2.5.1.dll">
+    </None>
+    <None Include="Cntk.Math-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Cntk.PerformanceProfiler-2.5.1.dll">
+    </None>
+    <None Include="Cntk.PerformanceProfiler-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
     <Content Include="CNTK\Models\Label_ClassID_Lookup.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
