@@ -225,41 +225,53 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="Cntk.Core-2.5.1.dll">
+    <Content Include="Cntk.Core-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="libiomp5md.dll" />
-    <None Include="mkldnn.dll" />
-    <None Include="mklml.dll" />
+    </Content>
+    <Content Include="libiomp5md.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="mkldnn.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="mklml.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Resource Include="NatureConservancyIcon.ico" />
-    <None Include="zip.dll" />
-    <None Include="zlib.dll" />
+    <Content Include="zip.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="zlib.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="Cntk.Composite-2.5.1.dll" />
+    <Content Include="Cntk.Composite-2.5.1.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Cntk.Core.CSBinding-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="Cntk.Deserializers.Binary-2.5.1.dll">
+    <Content Include="Cntk.Deserializers.Binary-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Cntk.Deserializers.HTK-2.5.1.dll">
+    </Content>
+    <Content Include="Cntk.Deserializers.HTK-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Cntk.Deserializers.Image-2.5.1.dll">
+    </Content>
+    <Content Include="Cntk.Deserializers.Image-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Cntk.Deserializers.TextFormat-2.5.1.dll">
+    </Content>
+    <Content Include="Cntk.Deserializers.TextFormat-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Cntk.Math-2.5.1.dll">
+    </Content>
+    <Content Include="Cntk.Math-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Cntk.PerformanceProfiler-2.5.1.dll">
+    </Content>
+    <Content Include="Cntk.PerformanceProfiler-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
     <Content Include="CNTK\Models\Label_ClassID_Lookup.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

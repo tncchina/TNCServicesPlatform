@@ -714,7 +714,7 @@ namespace TNCApp_New
                         shootingTime,
                         workDays,
                         "",
-                        "",
+                        speciesNamef,
                         "",
                         "",
                         firstDetected,
@@ -742,7 +742,7 @@ namespace TNCApp_New
             //var datadir = processDirctory(DataVisFolder, ConfirmPredictions[0].FilePath, RootProcessFolder);
             try
             {
-                File.WriteAllText(Path.Combine(pathString, "done.txt"), "", Encoding.Default);
+                File.WriteAllText(Path.Combine(folderPath, "done.txt"), "", Encoding.Default);
                 File.WriteAllText(Path.Combine(pathString, $"{positionNumber}.csv"), csv.ToString(), Encoding.Default);
             }
             catch (Exception e)
@@ -1063,7 +1063,8 @@ namespace TNCApp_New
                             {
                                 speciesName = ConfirmTextBox.Text;
                             }
-                            
+                            elements[dictAttribute["物种名称"]] = speciesName;
+
                         });
 
                     }
