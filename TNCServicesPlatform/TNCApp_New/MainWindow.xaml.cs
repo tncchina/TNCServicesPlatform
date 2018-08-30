@@ -125,7 +125,7 @@ namespace TNCApp_New
                 image.ImageName = Path.GetFileName(imagePath);
 
                 // 1. Upload meta data to Cosmos DB
-                string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload2";
+                string uploadUrl = "http://localhost:55464/api/storage/";
                 string imageJson = JsonConvert.SerializeObject(image);
                 byte[] byteData = Encoding.UTF8.GetBytes(imageJson);
                 HttpResponseMessage response;

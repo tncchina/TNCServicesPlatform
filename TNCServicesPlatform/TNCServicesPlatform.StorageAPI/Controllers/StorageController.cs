@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using TNCServicesPlatform.DataModel.Interfaces;
 using TNCServicesPlatform.StorageAPI.Common;
@@ -204,6 +205,24 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             }
         }
 
+        [HttpPut]
+        public async  Task<AnimalImage> CreateUpdateRecordByName([FromBody]AnimalImage image)
+        {
+            FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+            var ifexist =CosmosDBClient.CreateDocumentQuery<AnimalImage>(
+                UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName), queryOptions).Where(u => u.ImageName == image.ImageName);
+            var result = new List<AnimalImage>(ifexist);
+            if (result.Count==0)
+            {
+                return await UploadImage2(image);
+            }
+            else
+            {
+	            result[0].Tag = image.Tag;
+                await CosmosDBClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(CosmosDBName, CosmosDBCollectionName, result[0].Id),result[0]);
+                return image;
+            }
+        }
         [HttpPost]
         [Route("_echo")]
         public string Echo([FromBody] string item)
