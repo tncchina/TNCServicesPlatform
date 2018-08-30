@@ -115,7 +115,7 @@ namespace TNCApp_New
             this.DragMove();
         }
         //using the image path, upload the image to cosmos and storage account
-        AnimalImage UploadImage(string imagePath)
+        AnimalImage UploadImage(string imagePath , string tagName)
         {
             try
             {
@@ -123,6 +123,7 @@ namespace TNCApp_New
                 var client = new HttpClient();
                 AnimalImage image = new AnimalImage();
                 image.ImageName = Path.GetFileName(imagePath);
+                image.Tag = tagName;
 
                 // 1. Upload meta data to Cosmos DB
                 string uploadUrl = "http://tncapi.azurewebsites.net/api/storage/Upload2";
@@ -544,7 +545,7 @@ namespace TNCApp_New
                     //this.pictureBox1.Source = new BitmapImage(new Uri(imagePath, UriKind.RelativeOrAbsolute));
                     if (this.StateLocal != true)
                     {
-                        AnimalImage image =  UploadImage(imagePath1);
+                        AnimalImage image =  UploadImage(imagePath1,"");
                         //this.richTextBox1.Text = image.UploadBlobSASUrl;
                         // 2. image classification
                         if (UploadOnly)
@@ -633,9 +634,6 @@ namespace TNCApp_New
             if (Path.GetExtension(Pathname) != ".csv")
             {
                 newLine = string.Format("文件编号,原始文件编号,文件格式,文件夹编号,相机编号,布设点位编号,拍摄日期,拍摄时间,工作天数,对象类别,物种名称,动物数量,性别,独立探测首张,备注,aitag,prediction,confirmed");
-                
-
-
             }
             else
             {
@@ -1014,6 +1012,13 @@ namespace TNCApp_New
                 var fileExt = elements[dictAttribute["文件格式"]];
                 var prediction = elements[dictAttribute["prediction"]];
                 var imagePath = Path.Combine(Path.GetDirectoryName(originalLocation) , $"{fileNameNoext}.{fileExt}");
+                if (UploadOnly)
+                {
+                    speciesName = (elements[dictAttribute["物种名称"]] == "")
+                        ? elements[dictAttribute["aitag"]]
+                        : elements[dictAttribute["物种名称"]];
+                    UploadImage(imagePath, speciesName);
+                }
                 //workDays = (shootingDate - lastWorkDay).Days;
                 List<Prediction> sorted = JsonConvert.DeserializeObject<List<Prediction>>(prediction.Replace("|",","));
                 if (fileExt == "JPG")
@@ -1137,12 +1142,103 @@ namespace TNCApp_New
 
         private void Upload_Click(object sender, RoutedEventArgs e)
         {
-            if(StateLocal) return;
+            //if(StateLocal) return;
             UploadOnly = true;
-            StartPrediction1();
+            Upload();
             UploadOnly = false;
         }
 
+        private void Upload()
+        {
+            SinorMul = true;
+            List<string> directorys = new List<string>();
+            IndexCamera = 0;
+            CameraLocations = new List<string>();
+            CameraNumbers = new List<string>();
+
+            this.ListV.ItemsSource = new List<String>();
+            this.UploadingBar.Value = 0;
+            this.richTextBox1.Text = "";
+            this.pictureBox1.Source = new BitmapImage();
+            this.ConfirmButton.Visibility = Visibility.Hidden;
+            this.ConfirmTextBox.Visibility = Visibility.Hidden;
+
+            List<string> fileorflolder = new List<string>();
+            fileorflolder.Add("process csv");
+            fileorflolder.Add("process all csv in folder or subfolder");
+            ConfirmDIalog conDlg = new ConfirmDIalog(fileorflolder);
+
+            // Configure the dialog box
+            conDlg.Owner = this;
+            // Open the dialog box modally 
+            conDlg.ShowDialog();
+            int index = conDlg.Path;
+            List<string> imagePaths = new List<string>();
+            string Pathname;
+            List<List<string>> imagePath_2 = new List<List<string>>();
+            if (index == 0)
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Multiselect = true;
+                openFileDialog.ShowDialog();
+
+                if (!File.Exists(openFileDialog.FileName))
+                {
+                    richTextBox1.Text = "invliad file chosse";
+                    return;
+                }
+                imagePaths = new List<string>(openFileDialog.FileNames);
+                RootProcessFolder = Path.GetFileName(Path.GetDirectoryName(openFileDialog.FileName));
+                directorys.Add(Path.GetDirectoryName(openFileDialog.FileName));
+                imagePath_2.Add(imagePaths);
+
+                //singleProcess(imagePaths);
+
+            }
+
+            if (index == 1)
+            {
+                using (var fbd = new FolderBrowserDialog())
+                {
+                    DialogResult result = fbd.ShowDialog();
+
+                    if (!string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                    {
+                        RootProcessFolder = Path.GetFileName(fbd.SelectedPath);
+                        DirectoryInfo d = new DirectoryInfo(fbd.SelectedPath);
+
+                        var files = d.GetFiles("*.csv", SearchOption.AllDirectories);
+
+                        foreach (var file in files)
+                        {
+                            Pathname = file.FullName;
+                            if (Directory.GetFiles(Path.GetDirectoryName(Pathname), "done.txt", SearchOption.TopDirectoryOnly).Length != 0)
+                            {
+                                if (IsContinue) continue;
+                            }
+                            imagePaths = new List<string>();
+                            imagePaths.Add(Pathname);
+                            imagePath_2.Add(imagePaths);
+
+                            //singleProcess(imagePaths);
+                        }
+                    }
+                }
+
+            }
+
+            int i = 1;
+
+            foreach (var filepaths in imagePath_2)
+            {
+                this.FolderProgressBox.Text = $"Process {i} of  {imagePath_2.Count} folders";
+                AllowUIToUpdate();
+                singleProcess(filepaths);
+                i++;
+            }
+            this.FolderProgressBox.Text = "Done";
+            return;
+        }
 
         private void ConfidenceBar_ValueChanged_1(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
