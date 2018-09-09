@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TNCServicesPlatform.APIHost", "TNCServicesPlatform.APIHost\TNCServicesPlatform.APIHost.csproj", "{A2BABDEA-F81D-4A1E-99C6-FAC04F8BBA42}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCApp", "TNCApp\TNCApp.csproj", "{B6FA2794-CA17-47AB-91F9-7203AB1CFEA4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCApp_New", "TNCApp_New\TNCApp_New.csproj", "{9D03D81F-3373-4422-8A18-86B8B8FA8907}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNCApp_NewTest", "TNCApp_NewTest\TNCApp_NewTest.csproj", "{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -92,6 +94,14 @@ Global
 		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|x64.ActiveCfg = Debug|x64
 		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|x64.Build.0 = Debug|x64
 		{9D03D81F-3373-4422-8A18-86B8B8FA8907}.Release|x64.Deploy.0 = Debug|x64
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Debug|x64.Build.0 = Debug|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Release|x64.ActiveCfg = Release|Any CPU
+		{D0BC95CA-7CF9-49D0-960A-CCCDEF143FE9}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
