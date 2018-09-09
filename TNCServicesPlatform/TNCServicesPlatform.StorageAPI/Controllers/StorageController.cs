@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using TNCServicesPlatform.DataModel.Interfaces;
 using TNCServicesPlatform.StorageAPI.Common;
 using TNCServicesPlatform.StorageAPI.Models;
@@ -81,7 +82,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
                 animalImage.UploadBlobSASUrl = Utils.GenerateWriteSasUrl(blockblob);
 
                 // upload data to Cosmos DB
-                await CosmosDBClient.UpsertDocumentAsync(CosmosDBCollectionUri, animalImage);
+                await CosmosDBClient.UpsertDocumentAsync(LocationCollectionUri, animalImage);
 
                 //return blob url for uploading image
                 return animalImage;
@@ -246,25 +247,32 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
 
         [HttpPut]
         [Route("location")]
-        public async Task<AnimalLocation> CreateUpdateLocationByName([FromBody] AnimalLocation location)
+        public async Task<String> CreateUpdateLocationByName([FromBody] List<AnimalLocation> locations)
         {
-            FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
-            var ifexist = CosmosDBClient.CreateDocumentQuery<AnimalLocation>(
-                UriFactory.CreateDocumentCollectionUri(CosmosDBName, LocationCollectionName), queryOptions).Where(u => u.Name == location.Name);
-            var result = new List<AnimalLocation>(ifexist);
-            if (result.Count == 0)
+            List<AnimalLocation> Locations = locations;
+            foreach (var location in Locations)
             {
-                location.Id= Guid.NewGuid().ToString().ToLowerInvariant();
-                await CosmosDBClient.UpsertDocumentAsync(LocationCollectionUri, location);
-                return location;
+                    FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+                    var ifexist = CosmosDBClient.CreateDocumentQuery<AnimalLocation>(
+                        UriFactory.CreateDocumentCollectionUri(CosmosDBName, LocationCollectionName), queryOptions).Where(u => u.Name == location.Name);
+                    var result = new List<AnimalLocation>(ifexist);
+                    if (result.Count == 0)
+                    {
+                        location.Id = Guid.NewGuid().ToString().ToLowerInvariant();
+                        await CosmosDBClient.UpsertDocumentAsync(LocationCollectionUri, location);
+                    }
+                    else
+                    {
+                        location.Id = result[0].Id;
+                        result[0].Latitude = location.Longtitude;
+                        result[0].Longtitude = location.Latitude;
+                        await CosmosDBClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(CosmosDBName, LocationCollectionName, result[0].Id), result[0]);
+                    }
+                
+
             }
-            else
-            {
-                result[0].Latitude = location.Longtitude;
-                result[0].Longtitude = location.Latitude;
-                await CosmosDBClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(CosmosDBName, CosmosDBCollectionName, result[0].Id), result[0]);
-                return result[0];
-            }
+
+            return JsonConvert.SerializeObject(Locations);
         }
         [HttpPost]
         [Route("_echo")]

@@ -126,6 +126,56 @@ namespace TNCApp_New
         {
             this.DragMove();
         }
+        void UploadLocation(string locationjson)
+        {
+            try
+            {
+                JsonConvert.DeserializeObject<List<AnimalLocation>>(locationjson);
+            }
+            catch (Exception e)
+            {
+                this.richTextBox1.Text = "location information invalid, check your location txt file in TNC folder on desktop";
+                return;
+            }
+            try
+            {
+                var client = new HttpClient();
+
+                // 1. Upload meta data to Cosmos DB
+                string uploadUrl = "http://localhost:55464/api/storage/location";
+                byte[] byteData = Encoding.UTF8.GetBytes(locationjson);
+                HttpResponseMessage response;
+                var debug = UploadOnly;
+                using (var content = new ByteArrayContent(byteData))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    this.richTextBox1.Text = ("Sending location information");
+                    //this.UploadingBar.Value += 33;
+
+                    response = client.PutAsync(uploadUrl, content).Result;
+                    //response = client.PostAsync(uploadUrl, content).Result;
+                }
+                UploadOnly = debug;
+                string responseStr = response.Content.ReadAsStringAsync().Result;
+                
+                try
+                {
+                    JsonConvert.DeserializeObject<List<AnimalLocation>>(responseStr);
+                }
+                catch (Exception e)
+                {
+                    this.richTextBox1.Text = e.ToString();
+                    return;
+                }
+                File.WriteAllText(AnimalLocationTextFile, responseStr);
+                return ;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
         //using the image path, upload the image to cosmos and storage account
         AnimalImage UploadImage(string imagePath , AnimalImage animalImage)
         {
@@ -1272,10 +1322,70 @@ namespace TNCApp_New
         {
             //if(StateLocal) return;
             UploadOnly = true;
+            UploadLocation();
             StartPrediction1(GenerateCSV1);
             UploadOnly = false;
         }
 
+        public void UploadLocation()
+        {
+            StreamReader locationReader = new StreamReader(AnimalLocationTextFile);
+            var locations = locationReader.ReadToEnd();
+            locationReader.Close();
+            UploadLocation(locations);
+        }
+
+        public void ManageLocation()
+        {
+
+            StreamReader locationReader = new StreamReader(AnimalLocationTextFile);
+            List<int> indexes = new List<int>();
+            if (locationReader.Peek()==-1)
+            {
+                locationReader.Close();
+                return;
+            }
+            else
+            {
+                List<string> stringlocationList = new List<string>();
+                var locatonjson = locationReader.ReadToEnd();
+                List<AnimalLocation> AnimalLocations = JsonConvert.DeserializeObject<List<AnimalLocation>>(locatonjson);
+                
+                int i = 0;
+                foreach (var animallocation in AnimalLocations)
+                {
+                    if (animallocation.Latitude == 0)
+                    {
+                        stringlocationList.Add(animallocation.Name);
+                        indexes.Add(i);
+                    }
+
+                    i++;
+                }
+
+                
+               var a = Microsoft.VisualBasic.Interaction.InputBox("please type in the location information below, the format is (longtitude,latitude)|(longtitude,latitude)\n" + String.Join("\n", stringlocationList.ToArray() ),
+                    "location addtion addition",
+                    "Default data",
+                    -1, -1);
+                var resultstrings = a.Split("|".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                i = 0;
+                foreach (var resultstring in resultstrings)
+                {
+                    var removeParaphesestring =resultstring.Trim(new Char[] {'(', ')'});
+                    var locationinformation = removeParaphesestring.Split(',');
+                    AnimalLocations[indexes[i]].Latitude = Convert.ToDouble(locationinformation[0]);
+                    AnimalLocations[indexes[i]].Longtitude = Convert.ToDouble(locationinformation[1]);
+                    i++;
+                }
+                locationReader.Close();
+                var locationjson = JsonConvert.SerializeObject(AnimalLocations);
+                File.WriteAllText(AnimalLocationTextFile,locationjson);
+            }
+
+            
+
+        }
         //private void Upload()
         //{
         //    SinorMul = true;
@@ -1406,6 +1516,9 @@ namespace TNCApp_New
             jsonstring = JsonConvert.SerializeObject(animallocations);
             File.WriteAllText(AnimalLocationTextFile,jsonstring);
         }
-
+        private void ManageLocation(object sender, RoutedEventArgs e)
+        {
+            ManageLocation();
+        }
     }
 }

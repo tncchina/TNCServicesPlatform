@@ -332,6 +332,7 @@
                 <Slider x:Name="ConfidenceBar" HorizontalAlignment="Left" Height="12" Margin="10,303,0,0" VerticalAlignment="Top" Width="119" Maximum="100" LargeChange="5" SmallChange="0" ValueChanged="ConfidenceBar_ValueChanged_1" Value="90"/>
                 <TextBlock x:Name="ConfidenceBarText" HorizontalAlignment="Left" Height="24" Margin="95,274,0,0" TextWrapping="Wrap" Text="{Binding ElementName=ConfidenceBar,Path=Value}" VerticalAlignment="Top" Width="43"  FontSize="16" Background="{x:Null}" Foreground="White"  FontFamily="Century Gothic" />
                 <TextBlock x:Name="TextLineBox_Copy" HorizontalAlignment="Left" Height="24" Margin="9,274,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="86"  FontSize="14" Background="{x:Null}" Foreground="White"  FontFamily="Century Gothic" Text="Confidence:" />
+                <Button x:Name ="AddLocatoinInformationBtn" Content="Locations" HorizontalAlignment="Left" Margin="0,475,0,0" VerticalAlignment="Top" Width="138" Height="32" Background="{x:Null}" FontFamily="Century Gothic" Foreground="WhiteSmoke" Click="ManageLocation" BorderBrush="{x:Null}" FontSize="16" Style="{DynamicResource ButtonStyle1}"/>
             </Grid>
         </Grid>
 
