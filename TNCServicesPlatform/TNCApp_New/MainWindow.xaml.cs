@@ -172,8 +172,8 @@ namespace TNCApp_New
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                throw ex;
+                this.richTextBox1.Text = ex.ToString();
+                return;
             }
         }
         //using the image path, upload the image to cosmos and storage account

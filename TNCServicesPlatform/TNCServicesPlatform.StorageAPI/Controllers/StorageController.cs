@@ -82,7 +82,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
                 animalImage.UploadBlobSASUrl = Utils.GenerateWriteSasUrl(blockblob);
 
                 // upload data to Cosmos DB
-                await CosmosDBClient.UpsertDocumentAsync(LocationCollectionUri, animalImage);
+                await CosmosDBClient.UpsertDocumentAsync(CosmosDBCollectionUri, animalImage);
 
                 //return blob url for uploading image
                 return animalImage;
