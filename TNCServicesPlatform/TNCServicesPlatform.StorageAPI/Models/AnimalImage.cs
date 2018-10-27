@@ -23,6 +23,8 @@ namespace TNCServicesPlatform.StorageAPI.Models
 
         public string DownloadBlobSASUrl { get; set; }
 
+        public string LocationName { get; set; }
+
         public string Notes { get; set; }
 
 

@@ -11,7 +11,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using TNCServicesPlatform.DataModel.Interfaces;
 using TNCServicesPlatform.StorageAPI.Common;
 using TNCServicesPlatform.StorageAPI.Models;
@@ -22,8 +24,10 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
     public class StorageController : Controller
     {
         private const string CosmosDBName = "goldenmonkey";
-        private const string CosmosDBCollectionName = "animalimages";
+        private const string CosmosDBCollectionName = "animalimagesDemo";
         private const string BlobStorageContainerName = "animalimages";
+
+        private const string LocationCollectionName = "animalLocation";
 
         // TODO: use config
         private string BlobStorageCS;
@@ -33,11 +37,12 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         private readonly CloudStorageAccount BlobStorageAccount;
         private readonly DocumentClient CosmosDBClient;
         private readonly Uri CosmosDBCollectionUri;
+        private readonly Uri LocationCollectionUri;
 
         private readonly IKeyVaultAccessModel _kv;
 
         // Initialize controller with depenedncy injection -  kvInstance singleton
-        public StorageController(IKeyVaultAccessModel kvInstance)
+        public  StorageController(IKeyVaultAccessModel kvInstance)
         {
             _kv = kvInstance;
 
@@ -47,6 +52,10 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             BlobStorageAccount = CloudStorageAccount.Parse(BlobStorageCS);
             CosmosDBClient = new DocumentClient(new Uri(CosmosDBUrl), CosmosDBKey);
             CosmosDBCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName);
+            LocationCollectionUri = UriFactory.CreateDocumentCollectionUri(CosmosDBName, LocationCollectionName);
+
+
+
         }
 
         // POST api/values
@@ -204,6 +213,67 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             }
         }
 
+        [HttpPut]
+        public async  Task<AnimalImage> CreateUpdateRecordByName([FromBody]AnimalImage image)
+        {
+            //DocumentCollection coll = await CosmosDBClient.CreateDocumentCollectionIfNotExistsAsync(new Uri(CosmosDBUrl),
+            //    new DocumentCollection { Id = CosmosDBCollectionName },
+            //    new RequestOptions { OfferThroughput = 10000 });
+
+            FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+            var ifexist =CosmosDBClient.CreateDocumentQuery<AnimalImage>(
+                UriFactory.CreateDocumentCollectionUri(CosmosDBName, CosmosDBCollectionName), queryOptions).Where(u => u.ImageName == image.ImageName);
+            //if (!ifexist.Any())
+            //{
+            //    return await UploadImage2(image);
+            //}
+            var result = new List<AnimalImage>(ifexist);
+            if (result.Count==0)
+            {
+                return await UploadImage2(image);
+            }
+            else
+            {
+	            result[0].Tag = image.Tag;
+                result[0].LocationName = image.LocationName;
+                await CosmosDBClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(CosmosDBName, CosmosDBCollectionName, result[0].Id),result[0]);
+                CloudBlobClient blobClient = BlobStorageAccount.CreateCloudBlobClient();
+                CloudBlobContainer container = blobClient.GetContainerReference(BlobStorageContainerName);
+                CloudBlockBlob blockblob = container.GetBlockBlobReference(result[0].ImageBlob);
+                result[0].UploadBlobSASUrl = Utils.GenerateWriteSasUrl(blockblob);
+                return result[0];
+            }
+        }
+
+        [HttpPut]
+        [Route("location")]
+        public async Task<String> CreateUpdateLocationByName([FromBody] List<AnimalLocation> locations)
+        {
+            List<AnimalLocation> Locations = locations;
+            foreach (var location in Locations)
+            {
+                    FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+                    var ifexist = CosmosDBClient.CreateDocumentQuery<AnimalLocation>(
+                        UriFactory.CreateDocumentCollectionUri(CosmosDBName, LocationCollectionName), queryOptions).Where(u => u.Name == location.Name);
+                    var result = new List<AnimalLocation>(ifexist);
+                    if (result.Count == 0)
+                    {
+                        location.Id = Guid.NewGuid().ToString().ToLowerInvariant();
+                        await CosmosDBClient.UpsertDocumentAsync(LocationCollectionUri, location);
+                    }
+                    else
+                    {
+                        location.Id = result[0].Id;
+                        result[0].Latitude = location.Longtitude;
+                        result[0].Longtitude = location.Latitude;
+                        await CosmosDBClient.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(CosmosDBName, LocationCollectionName, result[0].Id), result[0]);
+                    }
+                
+
+            }
+
+            return JsonConvert.SerializeObject(Locations);
+        }
         [HttpPost]
         [Route("_echo")]
         public string Echo([FromBody] string item)

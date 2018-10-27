@@ -16,7 +16,7 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>C:\Users\tncdev\Desktop\TNCapp\</PublishUrl>
+    <PublishUrl>C:\Users\tncdev\Desktop\TNCAPP_NEW\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -26,7 +26,7 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>78</ApplicationRevision>
+    <ApplicationRevision>80</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -84,6 +84,10 @@
   <PropertyGroup>
     <SignManifests>true</SignManifests>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>NatureConservancyIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="Cntk.Core.Managed-2.5.1, Version=1.0.0.0, Culture=neutral, PublicKeyToken=21fff2ec8197defe, processorArchitecture=AMD64">
       <HintPath>..\packages\CNTK.CPUOnly.2.5.1\lib\net45\x64\Cntk.Core.Managed-2.5.1.dll</HintPath>
@@ -100,6 +104,11 @@
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Office.Interop.Excel.15.0.4795.1000\lib\net20\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="Microsoft.WindowsAzure.Storage, Version=9.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAzure.Storage.9.3.0\lib\net45\Microsoft.WindowsAzure.Storage.dll</HintPath>
     </Reference>
@@ -111,6 +120,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -148,6 +158,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AnimalImage.cs" />
+    <Compile Include="AnimalLocation.cs" />
     <Compile Include="camerainformationwithdirectory.xaml.cs">
       <DependentUpon>camerainformationwithdirectory.xaml</DependentUpon>
     </Compile>
@@ -157,9 +169,11 @@
     <Compile Include="DataVisualization.xaml.cs">
       <DependentUpon>DataVisualization.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DoubleToIntConverter.cs" />
     <Compile Include="InputDialog.xaml.cs">
       <DependentUpon>InputDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Utilities\XlstoCsv.cs" />
     <Page Include="camerainformationwithdirectory.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -177,7 +191,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="ActivationFunctions.cs" />
-    <Compile Include="AnimalImage.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -194,11 +207,18 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="PercentRateDataxaml.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\ConfirmPredictionModel.cs" />
     <Compile Include="Models\ImagePredictionResultModel.cs" />
     <Compile Include="Models\Prediction.cs" />
+    <Compile Include="PercentRateDataxaml.xaml.cs">
+      <DependentUpon>PercentRateDataxaml.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -215,11 +235,22 @@
     <Content Include="Cntk.Core-2.5.1.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="libiomp5md.dll" />
-    <Content Include="mkldnn.dll" />
-    <Content Include="mklml.dll" />
-    <Content Include="zip.dll" />
-    <Content Include="zlib.dll" />
+    <Content Include="libiomp5md.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="mkldnn.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="mklml.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="NatureConservancyIcon.ico" />
+    <Content Include="zip.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="zlib.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
