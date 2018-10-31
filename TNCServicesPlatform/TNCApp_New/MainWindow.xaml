@@ -308,11 +308,28 @@
                         </LinearGradientBrush>
                     </ProgressBar.Foreground>
                 </ProgressBar>
+                <Canvas x:Name="cnvs" Width="560" Height="368">
+                    <Rectangle x:Name="BoundingBox" Canvas.Left="144" Canvas.Top="114" Width="100" Height="100" Panel.ZIndex="99" Visibility="Hidden" >
+                        <Rectangle.Fill>
+                            <SolidColorBrush Color="#FF832C2C" Opacity="0.3"/>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                    <Image x:Name="pictureBox1" HorizontalAlignment="Left" Height="368" VerticalAlignment="Top" Width="560" Margin="-1,-9,0,0" Grid.RowSpan="2"/>
+                </Canvas>
 
-                <Image x:Name="pictureBox1" HorizontalAlignment="Left" Height="368" VerticalAlignment="Top" Width="560" Margin="-1,-9,0,0" Grid.RowSpan="2"/>
                 <TextBlock x:Name="richTextBox1" HorizontalAlignment="Left" Height="161" Margin="0,155,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="831" FontSize="36" FontFamily="Century Gothic" Background="{x:Null}" Grid.ColumnSpan="5"  Grid.Row="1" Foreground="White" />
-                <ListBox x:Name="ListV" HorizontalAlignment="Left" Height="374" Margin="1,0,0,0" VerticalAlignment="Top" Width="271" Grid.ColumnSpan="4" Grid.Column="1" Grid.RowSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White" FontFamily="ListV" FontSize="18" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseLeftButtonDown="ListV_MouseLeftButtonDown" PreviewMouseLeftButtonDown="ListV_PreviewMouseLeftButtonDown"/>
-                <TextBox x:Name="ConfirmTextBox" HorizontalAlignment="Left" Height="38" Margin="10,268,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="289" Foreground="#FFF6F4F4" Background="{x:Null}" FontSize="25" Visibility="Hidden"/>
+                <ListBox x:Name="ListV" HorizontalAlignment="Left" Height="374" Margin="1,0,0,0" VerticalAlignment="Top" Width="271" Grid.ColumnSpan="4" Grid.Column="1" Grid.RowSpan="2" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White" FontFamily="ListV" FontSize="18" ScrollViewer.VerticalScrollBarVisibility="Disabled" MouseLeftButtonDown="ListV_MouseLeftButtonDown" PreviewMouseLeftButtonDown="ListV_PreviewMouseLeftButtonDown" MouseEnter="ListV_MouseEnter">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="IsSelected" Value="True"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+                    <TextBox x:Name="ConfirmTextBox" HorizontalAlignment="Left" Height="38" Margin="10,268,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="289" Foreground="#FFF6F4F4" Background="{x:Null}" FontSize="25" Visibility="Hidden"/>
                 <Button x:Name="ConfirmButton" Content="Submit" HorizontalAlignment="Left" Height="38" Margin="337,268,0,0" Grid.Row="1" VerticalAlignment="Top" Width="162" Background="{x:Null}" Foreground="#FFF8F7F7" FontSize="20" Click="ConfirmButton_Click" Visibility="Hidden"/>
                 <TextBlock x:Name="FolderProgressBox" HorizontalAlignment="Left" Height="69" Margin="0,86,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="559"  FontFamily="Century Gothic" FontSize="36" Background="{x:Null}" Foreground="#FFFAF8F8" />
             </Grid>

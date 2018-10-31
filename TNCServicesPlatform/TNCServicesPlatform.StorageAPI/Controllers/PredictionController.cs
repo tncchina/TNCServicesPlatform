@@ -21,7 +21,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         private const string iterationId = "7fe03d9f-6852-47b3-9f06-f7592f13de53";
         private const string application = "TNC";
         private string baseUrl = $"https://southcentralus.api.cognitive.microsoft.com/customvision/v1.1/Prediction/{projectId}/url?";
-        private string cntkUrl = "http://tncanimallabelwebapi.azurewebsites.net/api/Prediction";
+        private string cntkUrl = "http://localhost:5555/tncapi/v1.0/Prediction/22222222/url";
 
         private readonly IKeyVaultAccessModel _kv;
         private string predictionKey;

@@ -64,6 +64,7 @@ namespace TNCApp_New
         public bool UploadOnly { get; set; }
         public bool isThreshhold { get; set; }
         public string AnimalLocationTextFile { get; set; }
+        public List<Prediction> LocalSorted { get; set; }
     
 
 
@@ -182,7 +183,7 @@ namespace TNCApp_New
             
             try
             {
-                this.UploadingBar.Value = 0;
+                //this.UploadingBar.Value = 0;
                 var client = new HttpClient();
                 animalImage.ImageName = Path.GetFileName(imagePath);
 
@@ -234,7 +235,7 @@ namespace TNCApp_New
             try
             {
                 var client = new HttpClient();
-                var uri = "http://tncapi.azurewebsites.net/api/prediction/cntk";
+                var uri = "http://localhost:55464/api/prediction/cntk";
 
                 byte[] byteData = Encoding.UTF8.GetBytes("\"" + imageUrl + "\"");
                 HttpResponseMessage response;
@@ -383,6 +384,7 @@ namespace TNCApp_New
             //}
 
             //File.Move(confirmpath,Path.Combine(BrowseFolder,Path.GetDirectoryName(confirmpath)));
+            this.BoundingBox.Visibility = Visibility.Hidden;
 
         }
         private void Confirm_Click(object sender, RoutedEventArgs e)
@@ -1160,7 +1162,8 @@ namespace TNCApp_New
 
                 //workDays = (shootingDate - lastWorkDay).Days;
                 List<Prediction> sorted = JsonConvert.DeserializeObject<List<Prediction>>(prediction.Replace("|",","));
-                if (fileExt == "JPG")
+                LocalSorted = sorted;
+                if (fileExt == "JPG"|| fileExt=="jpg")
                 {
                     if (IsContinue&& elements[dictAttribute["confirmed"]] == "yes")
                     {
@@ -1202,7 +1205,7 @@ namespace TNCApp_New
                     {
                          is_threshhold = this.isThreshhold;
                     });
-                    if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate||is_threshhold==false)
+                    if (Math.Round(sorted.ToList()[0].Probability * 100, 6) < this.ConfidenceRate || is_threshhold==false) //should be 
                     {
 
                         var items = new List<string>();
@@ -1222,6 +1225,10 @@ namespace TNCApp_New
                             this.ListV.ItemsSource = items;
                             this.ConfirmButton.Visibility = Visibility.Visible;
                             this.ConfirmTextBox.Visibility = Visibility.Visible;
+                                Canvas.SetTop(BoundingBox, LocalSorted[0].Region.Top * 368);
+                                Canvas.SetLeft(BoundingBox, LocalSorted[0].Region.Left * 560);
+                                this.BoundingBox.Width = LocalSorted[0].Region.Width * 560;
+                                this.BoundingBox.Height = LocalSorted[0].Region.Height * 368;
                         });
 
                         //AllowUIToUpdate();
@@ -1520,5 +1527,19 @@ namespace TNCApp_New
         {
             ManageLocation();
         }
+
+        private void ListV_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            this.BoundingBox.Visibility = Visibility.Visible;
+            if (ListV.SelectedIndex < LocalSorted.Count+1 && ListV.SelectedIndex>=0)
+            {
+                Canvas.SetTop(BoundingBox, LocalSorted[ListV.SelectedIndex].Region.Top * 368);
+                Canvas.SetLeft(BoundingBox, LocalSorted[ListV.SelectedIndex].Region.Left * 560);
+                this.BoundingBox.Width = LocalSorted[ListV.SelectedIndex].Region.Width * 560;
+                this.BoundingBox.Height = LocalSorted[ListV.SelectedIndex].Region.Height * 368;
+            }
+
+        }
+
     }
 }
