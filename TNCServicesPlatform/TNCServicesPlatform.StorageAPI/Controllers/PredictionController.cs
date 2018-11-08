@@ -21,10 +21,13 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
         private const string iterationId = "7fe03d9f-6852-47b3-9f06-f7592f13de53";
         private const string application = "TNC";
         private string baseUrl = $"https://southcentralus.api.cognitive.microsoft.com/customvision/v1.1/Prediction/{projectId}/url?";
-        private string cntkUrl = "http://tncanimallabelwebapi.azurewebsites.net/api/Prediction";
+        //private string cntkUrl = "http://tncanimallabelwebapi.azurewebsites.net/api/Prediction";
+        private string cntkUrlNet = "http://tncimg.westus2.azurecontainer.io:8080/tncapi/v1.0/Prediction/22222222/url";
+        private string cntkUrl = "https://tnccnktapi.azurewebsites.net/api/Prediction";
 
         private readonly IKeyVaultAccessModel _kv;
         private string predictionKey;
+        private static object predictionLock = new object();
 
         // Initialize controller with depenedncy injection -  kvInstance singleton
         public PredictionController(IKeyVaultAccessModel kvInstance)
@@ -80,25 +83,65 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
             try
             {
                 var client = new HttpClient();
-                // client.DefaultRequestHeaders.Add("Prediction-key", predictionKey);
+                // client.DefaultRequestHeaders.Add("Prediction-key", predictionKey)
 
-                // Request parameters
-                var queryString = HttpUtility.ParseQueryString(string.Empty);
-                queryString["iterationId"] = iterationId;
-                queryString["application"] = application;
-                //var uri = cntkUrl + queryString;
-                var uri = cntkUrl;
-
-                HttpResponseMessage response;
-                byte[] byteData = Encoding.UTF8.GetBytes("\"" + imageUrl + "\"");
-
-                using (var content = new ByteArrayContent(byteData))
+                lock (predictionLock)
                 {
-                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    response = await client.PostAsync(uri, content);
-                }
+                    // Request parameters
+                    var queryString = HttpUtility.ParseQueryString(string.Empty);
+                    queryString["iterationId"] = iterationId;
+                    queryString["application"] = application;
+                    //var uri = cntkUrl + queryString;
+                    var uri = cntkUrl;
 
-                return (await response.Content.ReadAsStringAsync());
+                    HttpResponseMessage response;
+                    byte[] byteData = Encoding.UTF8.GetBytes("\"" + imageUrl + "\"");
+
+                    using (var content = new ByteArrayContent(byteData))
+                    {
+                        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                        response = client.PostAsync(uri, content).Result;
+                    }
+
+                    return (response.Content.ReadAsStringAsync().Result);
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError(ex.ToString());
+                throw;
+            }
+        }
+
+        [HttpPost]
+        [Route("cntknet")]
+        public async Task<string> CNTKNet([FromBody] string imageUrl)
+        {
+            try
+            {
+                var client = new HttpClient();
+                // client.DefaultRequestHeaders.Add("Prediction-key", predictionKey)
+
+                lock (predictionLock)
+                {
+                    // Request parameters
+                    var queryString = HttpUtility.ParseQueryString(string.Empty);
+                    queryString["iterationId"] = iterationId;
+                    queryString["application"] = application;
+                    //var uri = cntkUrl + queryString;
+                    var uri = cntkUrlNet;
+
+                    HttpResponseMessage response;
+                    byte[] byteData = Encoding.UTF8.GetBytes("\"" + imageUrl + "\"");
+
+                    using (var content = new ByteArrayContent(byteData))
+                    {
+                        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                        response = client.PostAsync(uri, content).Result;
+                    }
+
+                    return (response.Content.ReadAsStringAsync().Result);
+                }
             }
             catch (Exception ex)
             {
