@@ -39,7 +39,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
 
         /// <summary>
         /// Sample Request Body: 
-        /// {"url":"https://images.pexels.com/photos/145947/pexels-photo-145947.jpeg?cs=srgb&dl=animal-cute-monkey-145947.jpg&fm=jpg"}
+        /// {"url":"https://tncstorage4test.blob.core.windows.net/animalimages/e9876516-f6d6-4286-a511-0365628a179d/9.jpg"}
         /// </summary>
         /// <returns>The URL.</returns>
         /// <param name="imageUrl">Image URL.</param>
