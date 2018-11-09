@@ -111,7 +111,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
                 Trace.TraceError(ex.ToString());
                 throw;
             }
-        }
+        } 
 
         [HttpPost]
         [Route("cntknet")]
@@ -137,6 +137,7 @@ namespace TNCServicesPlatform.StorageAPI.Controllers
                     using (var content = new ByteArrayContent(byteData))
                     {
                         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                        content.Headers.Add("Prediction-key","BU_faster_rcnn_eval_AlexNet_e2e_native");
                         response = client.PostAsync(uri, content).Result;
                     }
 
